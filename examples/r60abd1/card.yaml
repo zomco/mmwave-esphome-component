@@ -1,0 +1,28 @@
+views:
+  - type: sections
+    title: Home Assistant
+    path: home
+    icon: mdi:home-assistant
+    sections:
+      - type: grid
+        cards:
+          - type: tile
+            entity: light.seeed_mr60bha2_seeed_mr60bha2_rgb_light
+            name: Seeed MR60BHA2 RGB Light
+            color: green
+            features:
+              - type: light-brightness
+          - type: tile
+            entity: sensor.seeed_mr60bha2_distance_to_detection_object
+            name: Distance to detection object
+          - type: tile
+            entity: sensor.seeed_mr60bha2_real_time_heart_rate
+            name: Real-time heart rate
+          - type: tile
+            entity: sensor.seeed_mr60bha2_real_time_respiratory_rate
+            name: Real-time respiratory rate
+          - type: tile
+            entity: sensor.seeed_mr60bha2_seeed_mr60bha2_illuminance
+            name: Seeed MR60BHA2 Illuminance
+            color: accent
+        title: Seeed_MR60BHA2

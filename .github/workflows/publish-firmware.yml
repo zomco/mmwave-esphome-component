@@ -12,12 +12,10 @@ jobs:
     name: Build Firmware
     uses: esphome/workflows/.github/workflows/build.yml@2025.1.0
     with:
-      #### Modify below here to match your project ####
       files: |
-        r60abd1-s3.factory.yaml
+        examples/r60abd1/esp32s3.yaml
       esphome-version: 2024.12.2
       combined-name: mmwave
-      #### Modify above here to match your project ####
 
       release-summary: ${{ github.event.release.body }}
       release-url: ${{ github.event.release.html_url }}
