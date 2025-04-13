@@ -13,9 +13,9 @@ from esphome.const import (
     UNIT_CENTIMETER,
 )
 
-from . import CONF_MR60BHA2_ID, MR60BHA2Component
+from . import CONF_R60ABD1_ID, R60ABD1Component
 
-DEPENDENCIES = ["seeed_mr60bha2"]
+DEPENDENCIES = ["R60ABD1"]
 
 CONF_BREATH_RATE = "breath_rate"
 CONF_HEART_RATE = "heart_rate"
@@ -23,7 +23,7 @@ CONF_NUM_TARGETS = "num_targets"
 
 CONFIG_SCHEMA = cv.Schema(
     {
-        cv.GenerateID(CONF_MR60BHA2_ID): cv.use_id(MR60BHA2Component),
+        cv.GenerateID(CONF_R60ABD1_ID): cv.use_id(R60ABD1Component),
         cv.Optional(CONF_BREATH_RATE): sensor.sensor_schema(
             accuracy_decimals=0,
             state_class=STATE_CLASS_MEASUREMENT,
@@ -50,16 +50,16 @@ CONFIG_SCHEMA = cv.Schema(
 
 
 async def to_code(config):
-    mr60bha2_component = await cg.get_variable(config[CONF_MR60BHA2_ID])
+    R60ABD1_component = await cg.get_variable(config[CONF_R60ABD1_ID])
     if breath_rate_config := config.get(CONF_BREATH_RATE):
         sens = await sensor.new_sensor(breath_rate_config)
-        cg.add(mr60bha2_component.set_breath_rate_sensor(sens))
+        cg.add(R60ABD1_component.set_breath_rate_sensor(sens))
     if heart_rate_config := config.get(CONF_HEART_RATE):
         sens = await sensor.new_sensor(heart_rate_config)
-        cg.add(mr60bha2_component.set_heart_rate_sensor(sens))
+        cg.add(R60ABD1_component.set_heart_rate_sensor(sens))
     if distance_config := config.get(CONF_DISTANCE):
         sens = await sensor.new_sensor(distance_config)
-        cg.add(mr60bha2_component.set_distance_sensor(sens))
+        cg.add(R60ABD1_component.set_distance_sensor(sens))
     if num_targets_config := config.get(CONF_NUM_TARGETS):
         sens = await sensor.new_sensor(num_targets_config)
-        cg.add(mr60bha2_component.set_num_targets_sensor(sens))
+        cg.add(R60ABD1_component.set_num_targets_sensor(sens))

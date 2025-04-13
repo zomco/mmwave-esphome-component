@@ -5,12 +5,12 @@ from esphome.const import (
     DEVICE_CLASS_OCCUPANCY,
     CONF_HAS_TARGET,
 )
-from . import CONF_MR60BHA2_ID, MR60BHA2Component
+from . import CONF_R60ABD1_ID, R60ABD1Component
 
-DEPENDENCIES = ["seeed_mr60bha2"]
+DEPENDENCIES = ["R60ABD1"]
 
 CONFIG_SCHEMA = {
-    cv.GenerateID(CONF_MR60BHA2_ID): cv.use_id(MR60BHA2Component),
+    cv.GenerateID(CONF_R60ABD1_ID): cv.use_id(R60ABD1Component),
     cv.Optional(CONF_HAS_TARGET): binary_sensor.binary_sensor_schema(
         device_class=DEVICE_CLASS_OCCUPANCY, icon="mdi:motion-sensor"
     ),
@@ -18,8 +18,8 @@ CONFIG_SCHEMA = {
 
 
 async def to_code(config):
-    mr60bha2_component = await cg.get_variable(config[CONF_MR60BHA2_ID])
+    R60ABD1_component = await cg.get_variable(config[CONF_R60ABD1_ID])
 
     if has_target_config := config.get(CONF_HAS_TARGET):
         sens = await binary_sensor.new_binary_sensor(has_target_config)
-        cg.add(mr60bha2_component.set_has_target_binary_sensor(sens))
+        cg.add(R60ABD1_component.set_has_target_binary_sensor(sens))

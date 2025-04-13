@@ -7,18 +7,18 @@ CODEOWNERS = ["@limengdu"]
 DEPENDENCIES = ["uart"]
 MULTI_CONF = True
 
-mr60bha2_ns = cg.esphome_ns.namespace("seeed_mr60bha2")
+R60ABD1_ns = cg.esphome_ns.namespace("R60ABD1")
 
-MR60BHA2Component = mr60bha2_ns.class_(
-    "MR60BHA2Component", cg.Component, uart.UARTDevice
+R60ABD1Component = R60ABD1_ns.class_(
+    "R60ABD1Component", cg.Component, uart.UARTDevice
 )
 
-CONF_MR60BHA2_ID = "mr60bha2_id"
+CONF_R60ABD1_ID = "R60ABD1_id"
 
 CONFIG_SCHEMA = (
     cv.Schema(
         {
-            cv.GenerateID(): cv.declare_id(MR60BHA2Component),
+            cv.GenerateID(): cv.declare_id(R60ABD1Component),
         }
     )
     .extend(uart.UART_DEVICE_SCHEMA)
@@ -26,7 +26,7 @@ CONFIG_SCHEMA = (
 )
 
 FINAL_VALIDATE_SCHEMA = uart.final_validate_device_schema(
-    "seeed_mr60bha2",
+    "R60ABD1",
     require_tx=True,
     require_rx=True,
     baud_rate=115200,

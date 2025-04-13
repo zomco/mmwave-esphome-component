@@ -25,7 +25,7 @@ void R60ABD1Component::dump_config() {
 }
 
 // main loop
-void MR60BHA2Component::loop() {
+void R60ABD1Component::loop() {
   uint8_t byte;
 
   // Is there data on the serial port
@@ -72,7 +72,7 @@ static bool validate_checksum(const uint8_t *data, size_t len, uint8_t expected_
   return calculate_checksum(data, len) == expected_checksum;
 }
 
-bool MR60BHA2Component::validate_message_() {
+bool R60ABD1Component::validate_message_() {
   size_t at = this->rx_message_.size() - 1;
   auto *data = &this->rx_message_[0];
 
@@ -128,7 +128,7 @@ bool MR60BHA2Component::validate_message_() {
   return false;
 }
 
-void MR60BHA2Component::process_frame_(uint16_t frame_id, uint16_t frame_type, const uint8_t *data, size_t length) {
+void R60ABD1Component::process_frame_(uint16_t frame_id, uint16_t frame_type, const uint8_t *data, size_t length) {
   if (this->has_target_binary_sensor_ != nullptr && !this->has_target_binary_sensor_->state &&
       frame_type != PEOPLE_EXIST_TYPE_BUFFER) {
     // Do not process other frames while people exists sensor is still false
@@ -211,5 +211,5 @@ void MR60BHA2Component::process_frame_(uint16_t frame_id, uint16_t frame_type, c
   }
 }
 
-}  // namespace seeed_mr60bha2
+}  // namespace R60ABD1
 }  // namespace esphome

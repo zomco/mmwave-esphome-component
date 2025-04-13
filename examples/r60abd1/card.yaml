@@ -7,22 +7,22 @@ views:
       - type: grid
         cards:
           - type: tile
-            entity: light.seeed_mr60bha2_seeed_mr60bha2_rgb_light
-            name: Seeed MR60BHA2 RGB Light
+            entity: light.R60ABD1_R60ABD1_rgb_light
+            name: Seeed R60ABD1 RGB Light
             color: green
             features:
               - type: light-brightness
           - type: tile
-            entity: sensor.seeed_mr60bha2_distance_to_detection_object
+            entity: sensor.R60ABD1_distance_to_detection_object
             name: Distance to detection object
           - type: tile
-            entity: sensor.seeed_mr60bha2_real_time_heart_rate
+            entity: sensor.R60ABD1_real_time_heart_rate
             name: Real-time heart rate
           - type: tile
-            entity: sensor.seeed_mr60bha2_real_time_respiratory_rate
+            entity: sensor.R60ABD1_real_time_respiratory_rate
             name: Real-time respiratory rate
           - type: tile
-            entity: sensor.seeed_mr60bha2_seeed_mr60bha2_illuminance
-            name: Seeed MR60BHA2 Illuminance
+            entity: sensor.R60ABD1_R60ABD1_illuminance
+            name: Seeed R60ABD1 Illuminance
             color: accent
-        title: Seeed_MR60BHA2
+        title: R60ABD1
