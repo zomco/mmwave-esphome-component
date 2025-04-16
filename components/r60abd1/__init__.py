@@ -1,41 +1,46 @@
 import esphome.codegen as cg
-from esphome.components import uart
 import esphome.config_validation as cv
+from esphome.components import uart
 from esphome.const import CONF_ID
 
-CODEOWNERS = ["@limengdu"]
-DEPENDENCIES = ["uart"]
-MULTI_CONF = True
+# Declare the namespace for our C++ code
+CODEOWNERS = ["@your-github-username"] # Optional: Add your GitHub username
+DEPENDENCIES = ["uart"] # This component requires UART
+MULTI_CONF = True # Allow multiple instances of this component
 
-R60ABD1_ns = cg.esphome_ns.namespace("R60ABD1")
-
-R60ABD1Component = R60ABD1_ns.class_(
-    "R60ABD1Component", cg.Component, uart.UARTDevice
+# Namespace in C++
+micradar_r60abd1_ns = cg.esphome_ns.namespace("micradar_r60abd1")
+# Get the C++ class defined in the .h file
+MicRadarR60ABD1 = micradar_r60abd1_ns.class_(
+    "MicRadarR60ABD1", cg.Component, uart.UARTDevice
 )
 
-CONF_R60ABD1_ID = "R60ABD1_id"
-
-CONFIG_SCHEMA = (
-    cv.Schema(
-        {
-            cv.GenerateID(): cv.declare_id(R60ABD1Component),
-        }
-    )
-    .extend(uart.UART_DEVICE_SCHEMA)
-    .extend(cv.COMPONENT_SCHEMA)
-)
-
-FINAL_VALIDATE_SCHEMA = uart.final_validate_device_schema(
-    "R60ABD1",
-    require_tx=True,
-    require_rx=True,
-    baud_rate=115200,
-    parity="NONE",
-    stop_bits=1,
-)
+# Define the basic configuration schema for the component hub
+CONFIG_SCHEMA = cv.Schema(
+    {
+        cv.GenerateID(): cv.declare_id(MicRadarR60ABD1),
+        # Add component-level configuration options here if needed later
+        # For example:
+        # cv.Optional("enable_ota"): cv.boolean,
+    }
+).extend(uart.UART_DEVICE_SCHEMA) # Inherit UART settings (tx_pin, rx_pin, baud_rate etc)
 
 
+# The function that translates YAML config to C++ code
 async def to_code(config):
+    # Get the UART parent object
+    uart_component = await cg.get_variable(config[uart.CONF_UART_ID])
+    # Create an instance of our C++ class
     var = cg.new_Pvariable(config[CONF_ID])
+
+    # Register the component with ESPHome core
     await cg.register_component(var, config)
+    # Register the component as a UART device
     await uart.register_uart_device(var, config)
+
+    # Example: Pass component-level config to C++
+    # if "enable_ota" in config:
+    #    cg.add(var.set_ota_enabled(config["enable_ota"]))
+
+    # Set the UART parent for the C++ object
+    cg.add(var.set_uart_parent(uart_component)) # This line is important!
