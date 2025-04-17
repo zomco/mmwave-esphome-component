@@ -9,7 +9,7 @@
 #include <vector>
 
 namespace esphome {
-namespace micradar_r60abd1 {
+namespace r60abd1 {
 
 // Define constants based on the protocol document
 const uint8_t FRAME_HEADER[] = {0x53, 0x59};
@@ -85,7 +85,7 @@ const uint8_t CMD_SLEEP_STRUGGLE_SENSITIVITY_SET = 0x1A;
 
 
 // Forward declaration
-class MicRadarR60ABD1;
+class R60ABD1;
 
 // Base class for sensors associated with the hub
 class MicRadarR60ABD1Listener {
@@ -95,7 +95,7 @@ class MicRadarR60ABD1Listener {
 
 
 // Main Hub Component
-class MicRadarR60ABD1 : public Component, public uart::UARTDevice {
+class R60ABD1 : public Component, public uart::UARTDevice {
  public:
   // --- Sensor Configuration Methods (called by generated code) ---
   void register_listener(MicRadarR60ABD1Listener *listener) { this->listeners_.push_back(listener); }
@@ -176,5 +176,5 @@ class MicRadarR60ABD1 : public Component, public uart::UARTDevice {
   std::vector<MicRadarR60ABD1Listener *> listeners_;
 };
 
-}  // namespace micradar_r60abd1
+}  // namespace r60abd1
 }  // namespace esphome

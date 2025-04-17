@@ -9,7 +9,7 @@ from esphome.const import (
 )
 
 # Import the namespace and hub class from __init__.py
-from . import micradar_r60abd1_ns, MicRadarR60ABD1
+from . import r60abd1_ns, R60ABD1
 
 # Define keys for YAML configuration
 CONF_BED_STATUS = "bed_status"
@@ -23,7 +23,7 @@ TYPES = [
 # Configuration schema for individual binary sensors
 CONFIG_SCHEMA = cv.Schema(
     {
-        cv.GenerateID(CONF_ID): cv.use_id(MicRadarR60ABD1), # Reference the hub
+        cv.GenerateID(CONF_ID): cv.use_id(R60ABD1), # Reference the hub
         cv.Optional(CONF_PRESENCE): binary_sensor.binary_sensor_schema(
             device_class=DEVICE_CLASS_PRESENCE
         ),

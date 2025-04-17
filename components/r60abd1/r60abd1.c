@@ -1,13 +1,13 @@
-#include "micradar_r60abd1.h"
+#include "r60abd1.h"
 #include "esphome/core/log.h"
 #include "esphome/core/hal.h" // Include for delay
 
 namespace esphome {
-namespace micradar_r60abd1 {
+namespace r60abd1 {
 
-static const char *const TAG = "micradar_r60abd1";
+static const char *const TAG = "r60abd1";
 
-void MicRadarR60ABD1::setup() {
+void R60ABD1::setup() {
   ESP_LOGCONFIG(TAG, "Setting up MicRadar R60ABD1...");
   this->buffer_.reserve(MAX_FRAME_LENGTH); // Pre-allocate buffer
   // Optional: Send initial query commands after a short delay to get initial states
@@ -20,7 +20,7 @@ void MicRadarR60ABD1::setup() {
   // });
 }
 
-void MicRadarR60ABD1::loop() {
+void R60ABD1::loop() {
   while (this->available()) {
     uint8_t byte;
     this->read_byte(&byte);
@@ -28,29 +28,34 @@ void MicRadarR60ABD1::loop() {
   }
 }
 
-void MicRadarR60ABD1::dump_config() {
+void R60ABD1::dump_config() {
   ESP_LOGCONFIG(TAG, "MicRadar R60ABD1:");
   LOG_UART_DEVICE(this);
   // Log sensors linked via Python config generation
   LOG_BINARY_SENSOR("  ", "Presence Sensor", this->presence_sensor_);
-  LOG_SENSOR("  ", "Motion Sensor", this->motion_sensor_);
+
   LOG_TEXT_SENSOR("  ", "Motion Text Sensor", this->motion_text_sensor_);
+
+  LOG_SENSOR("  ", "Motion Sensor", this->motion_sensor_);
   LOG_SENSOR("  ", "Distance Sensor", this->distance_sensor_);
-  LOG_SENSOR("  ", "Body Movement Sensor", this->body_movement_sensor_);
+  LOG_SENSOR("  ", "Position X Sensor", this->position_x_sensor_);
+  LOG_SENSOR("  ", "Position Y Sensor", this->position_y_sensor_);
+  LOG_SENSOR("  ", "Position Z Sensor", this->position_z_sensor_);
   LOG_SENSOR("  ", "Heart Rate Sensor", this->heart_rate_sensor_);
   LOG_SENSOR("  ", "Respiration Rate Sensor", this->respiration_rate_sensor_);
+  
+  LOG_SENSOR("  ", "Body Movement Sensor", this->body_movement_sensor_);
+
+
   LOG_TEXT_SENSOR("  ", "Respiration Info Sensor", this->respiration_info_sensor_);
   LOG_BINARY_SENSOR("  ", "Bed Status Sensor", this->bed_status_sensor_);
   LOG_TEXT_SENSOR("  ", "Sleep Stage Sensor", this->sleep_stage_sensor_);
   LOG_SENSOR("  ", "Sleep Score Sensor", this->sleep_score_sensor_);
-  LOG_SENSOR("  ", "Position X Sensor", this->position_x_sensor_);
-  LOG_SENSOR("  ", "Position Y Sensor", this->position_y_sensor_);
-  LOG_SENSOR("  ", "Position Z Sensor", this->position_z_sensor_);
 }
 
 // Checksum calculation for SENDING commands
 // buffer contains Header, Control, Command, Length, Data
-uint8_t MicRadarR60ABD1::calculate_checksum_(const uint8_t* buffer, size_t length) {
+uint8_t R60ABD1::calculate_checksum_(const uint8_t* buffer, size_t length) {
     uint32_t sum = 0;
     for (size_t i = 0; i < length; ++i) {
         sum += buffer[i];
@@ -58,7 +63,7 @@ uint8_t MicRadarR60ABD1::calculate_checksum_(const uint8_t* buffer, size_t lengt
     return (uint8_t)(sum & 0xFF); // Return lower 8 bits
 }
 
-int16_t MicRadarR60ABD1::decode_16bit_signed_(uint8_t msb, uint8_t lsb) {
+int16_t R60ABD1::decode_16bit_signed_(uint8_t msb, uint8_t lsb) {
     // Protocol specific signed format (Page 11/12 interpretation)
     // 16 bits, first bit is sign (0=positive, 1=negative), remaining 15 bits are value
     uint16_t raw_value = (uint16_t(msb) << 8) | lsb;
@@ -70,7 +75,7 @@ int16_t MicRadarR60ABD1::decode_16bit_signed_(uint8_t msb, uint8_t lsb) {
 }
 
 
-void MicRadarR60ABD1::handle_byte_(uint8_t byte) {
+void R60ABD1::handle_byte_(uint8_t byte) {
   this->buffer_.push_back(byte);
 
   // Prevent buffer overflow - slightly safer check
@@ -182,7 +187,7 @@ void MicRadarR60ABD1::handle_byte_(uint8_t byte) {
 }
 
 
-void MicRadarR60ABD1::process_frame_(const std::vector<uint8_t> &frame) {
+void R60ABD1::process_frame_(const std::vector<uint8_t> &frame) {
   // Frame structure: [Header(2)|Ctrl(1)|Cmd(1)|Len(2)|Data(N)|Chk(1)|Footer(2)]
   // Minimum size is 9 (N=0)
   if (frame.size() < 9) {
@@ -371,7 +376,7 @@ void MicRadarR60ABD1::process_frame_(const std::vector<uint8_t> &frame) {
 }
 
 // --- Send Command Implementation ---
-void MicRadarR60ABD1::send_command(uint8_t control_word, uint8_t command_word, const std::vector<uint8_t>& data_payload) {
+void R60ABD1::send_command(uint8_t control_word, uint8_t command_word, const std::vector<uint8_t>& data_payload) {
    std::vector<uint8_t> frame;
    frame.reserve(9 + data_payload.size()); // Pre-allocate memory
 
@@ -396,27 +401,27 @@ void MicRadarR60ABD1::send_command(uint8_t control_word, uint8_t command_word, c
 }
 
 // --- Example Control Methods (Implementations) ---
-// void MicRadarR60ABD1::set_presence_detection(bool enable) {
+// void R60ABD1::set_presence_detection(bool enable) {
 //     ESP_LOGD(TAG, "Setting presence detection: %s", enable ? "ON" : "OFF");
 //     this->send_command(CTRL_PRESENCE, CMD_PRESENCE_SWITCH, {enable ? (uint8_t)0x01 : (uint8_t)0x00});
 // }
 
-// void MicRadarR60ABD1::set_heart_rate_detection(bool enable) {
+// void R60ABD1::set_heart_rate_detection(bool enable) {
 //     ESP_LOGD(TAG, "Setting heart rate detection: %s", enable ? "ON" : "OFF");
 //     this->send_command(CTRL_HEART_RATE, CMD_HEART_RATE_SWITCH, {enable ? (uint8_t)0x01 : (uint8_t)0x00});
 // }
 
-// void MicRadarR60ABD1::set_respiration_detection(bool enable) {
+// void R60ABD1::set_respiration_detection(bool enable) {
 //     ESP_LOGD(TAG, "Setting respiration detection: %s", enable ? "ON" : "OFF");
 //     this->send_command(CTRL_RESPIRATION, CMD_RESPIRATION_SWITCH, {enable ? (uint8_t)0x01 : (uint8_t)0x00});
 // }
 
-// void MicRadarR60ABD1::set_sleep_monitoring(bool enable) {
+// void R60ABD1::set_sleep_monitoring(bool enable) {
 //     ESP_LOGD(TAG, "Setting sleep monitoring: %s", enable ? "ON" : "OFF");
 //     this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_SWITCH, {enable ? (uint8_t)0x01 : (uint8_t)0x00});
 // }
 
-// void MicRadarR60ABD1::set_unattended_time(uint8_t minutes) {
+// void R60ABD1::set_unattended_time(uint8_t minutes) {
 //     // Protocol specifies range 30-180, step 10 min for CMD_SLEEP_UNATTENDED_TIME_SET (0x15)
 //     if (minutes < 30) minutes = 30;
 //     if (minutes > 180) minutes = 180;
@@ -426,7 +431,7 @@ void MicRadarR60ABD1::send_command(uint8_t control_word, uint8_t command_word, c
 //     this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_UNATTENDED_TIME_SET, {minutes});
 // }
 
-// void MicRadarR60ABD1::set_struggle_sensitivity(uint8_t level) {
+// void R60ABD1::set_struggle_sensitivity(uint8_t level) {
 //     // Protocol CMD_SLEEP_STRUGGLE_SENSITIVITY_SET (0x1A): 0x00 Low, 0x01 Medium, 0x02 High
 //     if (level > 2) level = 2; // Clamp to max value
 //     ESP_LOGD(TAG, "Setting struggle sensitivity level: %d", level);
@@ -434,5 +439,5 @@ void MicRadarR60ABD1::send_command(uint8_t control_word, uint8_t command_word, c
 // }
 
 
-}  // namespace micradar_r60abd1
+}  // namespace r60abd1
 }  // namespace esphome

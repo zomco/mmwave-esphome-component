@@ -4,21 +4,21 @@ from esphome.components import uart
 from esphome.const import CONF_ID
 
 # Declare the namespace for our C++ code
-CODEOWNERS = ["@your-github-username"] # Optional: Add your GitHub username
+CODEOWNERS = ["@zomco"] # Optional: Add your GitHub username
 DEPENDENCIES = ["uart"] # This component requires UART
 MULTI_CONF = True # Allow multiple instances of this component
 
 # Namespace in C++
-micradar_r60abd1_ns = cg.esphome_ns.namespace("micradar_r60abd1")
+r60abd1_ns = cg.esphome_ns.namespace("r60abd1")
 # Get the C++ class defined in the .h file
-MicRadarR60ABD1 = micradar_r60abd1_ns.class_(
-    "MicRadarR60ABD1", cg.Component, uart.UARTDevice
+R60ABD1 = r60abd1_ns.class_(
+    "R60ABD1", cg.Component, uart.UARTDevice
 )
 
 # Define the basic configuration schema for the component hub
 CONFIG_SCHEMA = cv.Schema(
     {
-        cv.GenerateID(): cv.declare_id(MicRadarR60ABD1),
+        cv.GenerateID(): cv.declare_id(R60ABD1),
         # Add component-level configuration options here if needed later
         # For example:
         # cv.Optional("enable_ota"): cv.boolean,
