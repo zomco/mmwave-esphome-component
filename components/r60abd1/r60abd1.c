@@ -33,18 +33,21 @@ void R60ABD1::dump_config() {
   LOG_UART_DEVICE(this);
   // Log sensors linked via Python config generation
   LOG_BINARY_SENSOR("  ", "Presence Sensor", this->presence_sensor_);
-
   LOG_TEXT_SENSOR("  ", "Motion Text Sensor", this->motion_text_sensor_);
-
   LOG_SENSOR("  ", "Motion Sensor", this->motion_sensor_);
+  LOG_SENSOR("  ", "Body Movement Sensor", this->body_movement_sensor_);
   LOG_SENSOR("  ", "Distance Sensor", this->distance_sensor_);
   LOG_SENSOR("  ", "Position X Sensor", this->position_x_sensor_);
   LOG_SENSOR("  ", "Position Y Sensor", this->position_y_sensor_);
   LOG_SENSOR("  ", "Position Z Sensor", this->position_z_sensor_);
+
   LOG_SENSOR("  ", "Heart Rate Sensor", this->heart_rate_sensor_);
+  LOG_SENSOR("  ", "Heart Rate Intensity 1 Sensor", this->heart_rate_sensor_);
+
+
   LOG_SENSOR("  ", "Respiration Rate Sensor", this->respiration_rate_sensor_);
   
-  LOG_SENSOR("  ", "Body Movement Sensor", this->body_movement_sensor_);
+
 
 
   LOG_TEXT_SENSOR("  ", "Respiration Info Sensor", this->respiration_info_sensor_);

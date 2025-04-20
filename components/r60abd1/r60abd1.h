@@ -141,19 +141,36 @@ class R60ABD1 : public Component, public uart::UARTDevice {
   // --- Sensor Pointers ---
   // Keep these as before, they will be set by the generated code via the public setters
   binary_sensor::BinarySensor *presence_sensor_{nullptr};
-  sensor::Sensor *motion_sensor_{nullptr};
   text_sensor::TextSensor *motion_text_sensor_{nullptr};
-  sensor::Sensor *distance_sensor_{nullptr};
+  sensor::Sensor *motion_sensor_{nullptr};
   sensor::Sensor *body_movement_sensor_{nullptr};
-  sensor::Sensor *heart_rate_sensor_{nullptr};
-  sensor::Sensor *respiration_rate_sensor_{nullptr};
-  text_sensor::TextSensor *respiration_info_sensor_{nullptr};
-  binary_sensor::BinarySensor *bed_status_sensor_{nullptr};
-  text_sensor::TextSensor *sleep_stage_sensor_{nullptr};
-  sensor::Sensor *sleep_score_sensor_{nullptr};
+  sensor::Sensor *distance_sensor_{nullptr};
   sensor::Sensor *position_x_sensor_{nullptr};
   sensor::Sensor *position_y_sensor_{nullptr};
   sensor::Sensor *position_z_sensor_{nullptr};
+
+  sensor::Sensor *heart_rate_sensor_{nullptr};
+  sensor::Sensor *heart_rate_intensity_1_sensor_{nullptr};
+  sensor::Sensor *heart_rate_intensity_2_sensor_{nullptr};
+  sensor::Sensor *heart_rate_intensity_3_sensor_{nullptr};
+  sensor::Sensor *heart_rate_intensity_4_sensor_{nullptr};
+  sensor::Sensor *heart_rate_intensity_5_sensor_{nullptr};
+
+  sensor::Sensor *respiration_rate_sensor_{nullptr};
+  text_sensor::TextSensor *respiration_info_sensor_{nullptr};
+  sensor::Sensor *respiration_rate_intensity_1_sensor_{nullptr};
+  sensor::Sensor *respiration_rate_intensity_2_sensor_{nullptr};
+  sensor::Sensor *respiration_rate_intensity_3_sensor_{nullptr};
+  sensor::Sensor *respiration_rate_intensity_4_sensor_{nullptr};
+  sensor::Sensor *respiration_rate_intensity_5_sensor_{nullptr};
+
+  binary_sensor::BinarySensor *bed_status_sensor_{nullptr};
+  text_sensor::TextSensor *sleep_stage_sensor_{nullptr};
+  sensor::Sensor *awake_duration_sensor_{nullptr};
+  sensor::Sensor *light_sleep_duration_sensor_{nullptr};
+  sensor::Sensor *deep_sleep_duration_sensor_{nullptr};
+  sensor::Sensor *sleep_score_sensor_{nullptr};
+
 
   // --- Internal State ---
   std::vector<uint8_t> buffer_;
