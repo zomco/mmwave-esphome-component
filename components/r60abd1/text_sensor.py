@@ -27,22 +27,21 @@ TYPES = [
 # Configuration schema for individual text sensors
 CONFIG_SCHEMA = cv.Schema(
     {
-        cv.GenerateID(CONF_ID): cv.use_id(R60ABD1), # Reference the hub
+        cv.GenerateID(CONF_ID): cv.use_id(R60ABD1),  # Reference the hub
         cv.Optional(CONF_MOTION_TEXT): text_sensor.text_sensor_schema(
-            icon=ICON_MOTION_SENSOR # Or mdi:walk
+            icon=ICON_MOTION_SENSOR  # Or mdi:walk
         ),
         cv.Optional(CONF_RESPIRATION_INFO): text_sensor.text_sensor_schema(
-             icon=ICON_INFORMATION_OUTLINE # Or ICON_LUNGS
+            icon=ICON_INFORMATION_OUTLINE  # Or ICON_LUNGS
         ),
-        cv.Optional(CONF_SLEEP_STAGE): text_sensor.text_sensor_schema(
-             icon=ICON_SLEEP
-        ),
+        cv.Optional(CONF_SLEEP_STAGE): text_sensor.text_sensor_schema(icon=ICON_SLEEP),
     }
 )
 
+
 # Function to generate C++ code
 async def to_code(config):
-    hub = await cg.get_variable(config[CONF_ID]) # Get the hub instance
+    hub = await cg.get_variable(config[CONF_ID])  # Get the hub instance
 
     for key in TYPES:
         if key in config:

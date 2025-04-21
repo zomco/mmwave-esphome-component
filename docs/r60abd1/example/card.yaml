@@ -6,7 +6,7 @@
 #    within a 'custom_components/r60abd1/' subdirectory.
 
 esphome:
-  name: micradar_sleep_monitor
+  name: _sleep_monitor
   # ... other esphome settings ...
   # No includes or custom_component lambda needed anymore for basic setup!
 
@@ -17,7 +17,7 @@ uart:
   rx_pin: GPIO3 # Adjust to your ESP's RX pin connected to Radar TX
   baud_rate: 115200
 
-# Configure the MicRadar component itself (using the name from __init__.py)
+# Configure the  component itself (using the name from __init__.py)
 r60abd1:
   id: radar_hub # Give the main component an ID
   uart_id: uart_bus # Link it to the UART bus defined above

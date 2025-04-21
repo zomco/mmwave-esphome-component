@@ -4,16 +4,14 @@ from esphome.components import uart
 from esphome.const import CONF_ID
 
 # Declare the namespace for our C++ code
-CODEOWNERS = ["@zomco"] # Optional: Add your GitHub username
-DEPENDENCIES = ["uart"] # This component requires UART
-MULTI_CONF = True # Allow multiple instances of this component
+CODEOWNERS = ["@zomco"]  # Optional: Add your GitHub username
+DEPENDENCIES = ["uart"]  # This component requires UART
+MULTI_CONF = True  # Allow multiple instances of this component
 
 # Namespace in C++
 r60abd1_ns = cg.esphome_ns.namespace("r60abd1")
 # Get the C++ class defined in the .h file
-R60ABD1 = r60abd1_ns.class_(
-    "R60ABD1", cg.Component, uart.UARTDevice
-)
+R60ABD1 = r60abd1_ns.class_("R60ABD1", cg.Component, uart.UARTDevice)
 
 # Define the basic configuration schema for the component hub
 CONFIG_SCHEMA = cv.Schema(
@@ -23,7 +21,9 @@ CONFIG_SCHEMA = cv.Schema(
         # For example:
         # cv.Optional("enable_ota"): cv.boolean,
     }
-).extend(uart.UART_DEVICE_SCHEMA) # Inherit UART settings (tx_pin, rx_pin, baud_rate etc)
+).extend(
+    uart.UART_DEVICE_SCHEMA
+)  # Inherit UART settings (tx_pin, rx_pin, baud_rate etc)
 
 
 # The function that translates YAML config to C++ code
@@ -43,4 +43,4 @@ async def to_code(config):
     #    cg.add(var.set_ota_enabled(config["enable_ota"]))
 
     # Set the UART parent for the C++ object
-    cg.add(var.set_uart_parent(uart_component)) # This line is important!
+    cg.add(var.set_uart_parent(uart_component))  # This line is important!

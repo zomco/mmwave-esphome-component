@@ -9,12 +9,12 @@ from esphome.const import (
     CONF_POSITION_Y,
     CONF_POSITION_Z,
     DEVICE_CLASS_DISTANCE,
-    DEVICE_CLASS_EMPTY, # Use empty for things like 'score' or 'count'
-    DEVICE_CLASS_SPEED, # Use for respiration rate (breaths/min)
+    DEVICE_CLASS_EMPTY,  # Use empty for things like 'score' or 'count'
+    DEVICE_CLASS_SPEED,  # Use for respiration rate (breaths/min)
     ICON_HEART_PULSE,
     ICON_MOTION_SENSOR,
     ICON_RULER,
-    ICON_SCOREBOARD, # For sleep score
+    ICON_SCOREBOARD,  # For sleep score
     ICON_LUNGS,
     ICON_AXIS_X_ARROW,
     ICON_AXIS_Y_ARROW,
@@ -22,8 +22,8 @@ from esphome.const import (
     STATE_CLASS_MEASUREMENT,
     UNIT_CENTIMETER,
     UNIT_BEATS_PER_MINUTE,
-    UNIT_EMPTY, # For score/count
-    UNIT_PERCENT, # For body movement?
+    UNIT_EMPTY,  # For score/count
+    UNIT_PERCENT,  # For body movement?
 )
 
 # Import the namespace and hub class from __init__.py
@@ -52,7 +52,9 @@ TYPES = [
 # Users will define sensors under the 'sensor:' platform in their YAML
 CONFIG_SCHEMA = cv.Schema(
     {
-        cv.GenerateID(CONF_ID): cv.use_id(R60ABD1), # Reference the main hub component ID
+        cv.GenerateID(CONF_ID): cv.use_id(
+            R60ABD1
+        ),  # Reference the main hub component ID
         cv.Optional(CONF_DISTANCE): sensor.sensor_schema(
             unit_of_measurement=UNIT_CENTIMETER,
             icon=ICON_RULER,
@@ -61,15 +63,15 @@ CONFIG_SCHEMA = cv.Schema(
             state_class=STATE_CLASS_MEASUREMENT,
         ),
         cv.Optional(CONF_MOTION_STATE): sensor.sensor_schema(
-            unit_of_measurement=UNIT_EMPTY, # It's a state code (0, 1, 2)
+            unit_of_measurement=UNIT_EMPTY,  # It's a state code (0, 1, 2)
             icon=ICON_MOTION_SENSOR,
             accuracy_decimals=0,
-            device_class=DEVICE_CLASS_EMPTY, # Not a standard device class
-            state_class=STATE_CLASS_MEASUREMENT, # Or maybe none if just informational?
+            device_class=DEVICE_CLASS_EMPTY,  # Not a standard device class
+            state_class=STATE_CLASS_MEASUREMENT,  # Or maybe none if just informational?
         ),
-         cv.Optional(CONF_BODY_MOVEMENT): sensor.sensor_schema(
-            unit_of_measurement=UNIT_PERCENT, # Assuming 0-100 is like a percentage
-            icon="mdi:walk", # Or mdi:human-male
+        cv.Optional(CONF_BODY_MOVEMENT): sensor.sensor_schema(
+            unit_of_measurement=UNIT_PERCENT,  # Assuming 0-100 is like a percentage
+            icon="mdi:walk",  # Or mdi:human-male
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
@@ -78,18 +80,18 @@ CONFIG_SCHEMA = cv.Schema(
             unit_of_measurement=UNIT_BEATS_PER_MINUTE,
             icon=ICON_HEART_PULSE,
             accuracy_decimals=0,
-            device_class=DEVICE_CLASS_EMPTY, # No specific device class for BPM
+            device_class=DEVICE_CLASS_EMPTY,  # No specific device class for BPM
             state_class=STATE_CLASS_MEASUREMENT,
         ),
         cv.Optional(CONF_RESPIRATION_RATE): sensor.sensor_schema(
-            unit_of_measurement="rpm", # breaths per minute
+            unit_of_measurement="rpm",  # breaths per minute
             icon=ICON_LUNGS,
             accuracy_decimals=0,
-            device_class=DEVICE_CLASS_SPEED, # Using speed as it's a rate
+            device_class=DEVICE_CLASS_SPEED,  # Using speed as it's a rate
             state_class=STATE_CLASS_MEASUREMENT,
         ),
         cv.Optional(CONF_SLEEP_SCORE): sensor.sensor_schema(
-            unit_of_measurement="分", # Score unit
+            unit_of_measurement="分",  # Score unit
             icon=ICON_SCOREBOARD,
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
@@ -109,7 +111,7 @@ CONFIG_SCHEMA = cv.Schema(
             device_class=DEVICE_CLASS_DISTANCE,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
-         cv.Optional(CONF_POSITION_Z): sensor.sensor_schema(
+        cv.Optional(CONF_POSITION_Z): sensor.sensor_schema(
             unit_of_measurement=UNIT_CENTIMETER,
             icon=ICON_AXIS_Z_ARROW,
             accuracy_decimals=0,
@@ -119,9 +121,10 @@ CONFIG_SCHEMA = cv.Schema(
     }
 )
 
+
 # Function to generate C++ code for sensor setup
 async def to_code(config):
-    hub = await cg.get_variable(config[CONF_ID]) # Get the hub instance
+    hub = await cg.get_variable(config[CONF_ID])  # Get the hub instance
 
     # Loop through defined sensor types and register them with the hub
     for key in TYPES:
@@ -148,4 +151,3 @@ async def to_code(config):
                 cg.add(hub.set_position_y_sensor(sens))
             elif key == CONF_POSITION_Z:
                 cg.add(hub.set_position_z_sensor(sens))
-
