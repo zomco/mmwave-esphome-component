@@ -11,15 +11,27 @@ namespace esphome
 
     void R60ABD1::setup()
     {
-      ESP_LOGCONFIG(TAG, "Setting up  R60ABD1...");
+      ESP_LOGCONFIG(TAG, "Setting up R60ABD1...");
       this->buffer_.reserve(MAX_FRAME_LENGTH); // Pre-allocate buffer
-      // Optional: Send initial query commands after a short delay to get initial states
-      // set_timeout(5000, [this]() {
+
+      // Query firmware version after a delay (e.g., 5 seconds) to allow radar initialization
+      this->set_timeout("firmware_query", 5000, [this]()
+                        {
+        ESP_LOGD(TAG, "Querying firmware version...");
+        // Command: Query Firmware Version (Control=0x02, Command=0xA4, Data=0x0F)
+        this->send_command(CTRL_PRODUCT_INFO, CMD_FIRMWARE_VERSION_QUERY, {0x0F}); });
+
+      // Optional: Query other initial states after a slightly longer delay
+      // this->set_timeout("initial_state_query", 6000, [this]() {
       //   ESP_LOGD(TAG, "Querying initial states...");
-      //   this->send_command(CTRL_PRESENCE, CMD_PRESENCE_QUERY, {0x0F});
-      //   this->send_command(CTRL_HEART_RATE, CMD_HEART_RATE_VALUE_QUERY, {0x0F});
-      //   this->send_command(CTRL_RESPIRATION, CMD_RESPIRATION_VALUE_QUERY, {0x0F});
-      //   this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_BED_STATUS_REPORT, {0x0F}); // Use query commands 0x81, 0x82 etc.
+      //   this->send_command(CTRL_PRESENCE, CMD_PRESENCE_SWITCH_QUERY, {0x0F}); // Query presence detection status
+      //   this->send_command(CTRL_HEART_RATE, CMD_HEART_RATE_SWITCH_QUERY, {0x0F}); // Query HR detection status
+      //   this->send_command(CTRL_RESPIRATION, CMD_RESPIRATION_SWITCH_QUERY, {0x0F}); // Query Resp detection status
+      //   this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_SWITCH_QUERY, {0x0F}); // Query Sleep monitoring status
+      //   // Query other settings like thresholds if needed
+      //   this->send_command(CTRL_RESPIRATION, CMD_RESPIRATION_LOW_THRESHOLD_QUERY, {0x0F});
+      //   this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_UNATTENDED_TIME_QUERY, {0x0F});
+      //   this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_STRUGGLE_SENSITIVITY_QUERY, {0x0F});
       // });
     }
 
@@ -64,6 +76,7 @@ namespace esphome
 
       LOG_BINARY_SENSOR("  ", "Bed Status Sensor", this->bed_status_sensor_);
       LOG_TEXT_SENSOR("  ", "Sleep Stage Sensor", this->sleep_stage_sensor_);
+      LOG_TEXT_SENSOR("  ", "Firmware Version Sensor", this->firmware_version_sensor_);
     }
 
     // Checksum calculation for SENDING commands
@@ -93,168 +106,162 @@ namespace esphome
 
     void R60ABD1::handle_byte_(uint8_t byte)
     {
-      this->buffer_.push_back(byte);
+      this->buffer_.push_back(byte); // Add byte to the buffer
 
-      // Prevent buffer overflow - slightly safer check
-      if (this->buffer_.size() > MAX_FRAME_LENGTH + 5)
-      { // Allow some margin
-        ESP_LOGW(TAG, "Buffer overflow risk, clearing buffer.");
+      // Basic buffer overflow protection
+      if (this->buffer_.size() > MAX_FRAME_LENGTH + 10)
+      { // Check against a slightly larger limit
+        ESP_LOGW(TAG, "Buffer overflow risk detected (size: %d), clearing buffer.", this->buffer_.size());
         this->buffer_.clear();
-        this->parse_state_ = ParseState::WAITING_HEADER_1; // Reset state
-        return;                                            // Avoid processing the byte that caused the overflow potential
+        this->parse_state_ = ParseState::WAITING_HEADER_1; // Reset state machine
+        return;
       }
 
+      // State machine logic
       switch (this->parse_state_)
       {
       case ParseState::WAITING_HEADER_1:
-        // If buffer not empty, it means we are in a recovery state, clear it first
-        if (!this->buffer_.empty())
-          this->buffer_.clear();
+        // If buffer is not empty here, it means we might be in recovery, clear it first.
+        if (this->buffer_.size() > 1)
+        {
+          this->buffer_.erase(this->buffer_.begin(), this->buffer_.end() - 1); // Keep only the last byte
+        }
         if (byte == FRAME_HEADER[0])
         {
-          this->parse_state_ = ParseState::WAITING_HEADER_2;
-          this->buffer_.push_back(byte); // Start collecting frame
+          this->parse_state_ = ParseState::WAITING_HEADER_2; // Found first header byte
         }
-        // If not header byte 1, just ignore and wait
+        else
+        {
+          // Discard unexpected byte if buffer is growing too large without finding header
+          if (this->buffer_.size() > 2)
+          {                                             // Allow buffer to hold at least the potential header
+            this->buffer_.erase(this->buffer_.begin()); // Remove oldest byte
+          }
+        }
         break;
       case ParseState::WAITING_HEADER_2:
         if (byte == FRAME_HEADER[1])
         {
-          this->parse_state_ = ParseState::READING_CONTROL;
-          // buffer_ already contains HEADER[0], now add HEADER[1]
+          this->parse_state_ = ParseState::READING_CONTROL; // Found second header byte
         }
         else
         {
           ESP_LOGW(TAG, "Invalid header byte 2: 0x%02X, resetting.", byte);
-          this->parse_state_ = ParseState::WAITING_HEADER_1;
-          this->buffer_.clear(); // Discard partial frame
+          this->parse_state_ = ParseState::WAITING_HEADER_1; // Reset: sequence broken
+          this->buffer_.clear();                             // Discard invalid frame start
         }
         break;
-      case ParseState::READING_CONTROL:
+      case ParseState::READING_CONTROL: // Control Word (Byte 3)
         this->parse_state_ = ParseState::READING_COMMAND;
         break;
-      case ParseState::READING_COMMAND:
+      case ParseState::READING_COMMAND: // Command Word (Byte 4)
         this->parse_state_ = ParseState::READING_LENGTH_H;
         break;
-      case ParseState::READING_LENGTH_H:
+      case ParseState::READING_LENGTH_H: // Length High Byte (Byte 5)
         this->data_length_ = (uint16_t)byte << 8;
         this->parse_state_ = ParseState::READING_LENGTH_L;
         break;
-      case ParseState::READING_LENGTH_L:
+      case ParseState::READING_LENGTH_L: // Length Low Byte (Byte 6)
         this->data_length_ |= byte;
-        // Frame size = Header(2)+Ctrl(1)+Cmd(1)+Len(2)+Data(data_length_)+Chk(1)+Foot(2) = 9 + data_length_
+        // Sanity check data length
         if (this->data_length_ > MAX_FRAME_LENGTH)
-        { // Check if data length exceeds reasonable limit
-          ESP_LOGW(TAG, "Declared data length too large: %d. Resetting.", this->data_length_);
+        {
+          ESP_LOGW(TAG, "Declared data length (0x%04X) too large. Resetting.", this->data_length_);
           this->parse_state_ = ParseState::WAITING_HEADER_1;
           this->buffer_.clear();
           this->data_length_ = 0;
         }
         else if (this->data_length_ == 0)
         {
-          this->parse_state_ = ParseState::READING_CHECKSUM; // No data bytes
+          this->parse_state_ = ParseState::READING_CHECKSUM; // No data bytes expected
         }
         else
         {
-          this->parse_state_ = ParseState::READING_DATA;
+          this->parse_state_ = ParseState::READING_DATA; // Expect data bytes
         }
         break;
-      case ParseState::READING_DATA:
-        // Check if we have received all data bytes based on expected total frame size
-        // Expected size = Header(2)+Ctrl(1)+Cmd(1)+Len(2)+Data(data_length_) = 6 + data_length_
+      case ParseState::READING_DATA: // Data Bytes (Byte 7 to 6+data_length)
+        // Check if we have received all expected data bytes
+        // Current buffer size should be Header(2)+Ctrl(1)+Cmd(1)+Len(2)+Data(data_length) = 6 + data_length
         if (this->buffer_.size() == 6 + this->data_length_)
         {
-          this->parse_state_ = ParseState::READING_CHECKSUM;
+          this->parse_state_ = ParseState::READING_CHECKSUM; // All data bytes received
         }
+        // If not all data bytes received yet, stay in this state
         break;
-      case ParseState::READING_CHECKSUM:
-        // Checksum byte is now received, total size = 7 + data_length_
-        this->expected_checksum_ = byte;
+      case ParseState::READING_CHECKSUM: // Checksum Byte (Byte 7+data_length)
+        this->expected_checksum_ = byte; // Store the checksum byte from the frame
         this->parse_state_ = ParseState::READING_FOOTER_1;
         break;
-      case ParseState::READING_FOOTER_1:
-        // Footer byte 1 received, total size = 8 + data_length_
+      case ParseState::READING_FOOTER_1: // Footer Byte 1 (Byte 8+data_length)
         if (byte == FRAME_FOOTER[0])
         {
-          this->parse_state_ = ParseState::READING_FOOTER_2;
+          this->parse_state_ = ParseState::READING_FOOTER_2; // Found first footer byte
         }
         else
         {
           ESP_LOGW(TAG, "Invalid footer byte 1: 0x%02X. Frame discarded.", byte);
-          this->parse_state_ = ParseState::WAITING_HEADER_1;
-          this->buffer_.clear();
+          this->parse_state_ = ParseState::WAITING_HEADER_1; // Reset: sequence broken
+          this->buffer_.clear();                             // Discard invalid frame
         }
         break;
-      case ParseState::READING_FOOTER_2:
-        // Footer byte 2 received, total size = 9 + data_length_
+      case ParseState::READING_FOOTER_2: // Footer Byte 2 (Byte 9+data_length)
         if (byte == FRAME_FOOTER[1])
         {
           // Frame received completely, validate checksum
-          // Checksum range: Header(2)+Ctrl(1)+Cmd(1)+Len(2)+Data(data_length_) = 6 + data_length_ bytes
-          // The checksum byte itself is at index 6 + data_length_
+          // Checksum includes bytes from Header up to the end of Data field
+          // Total bytes for checksum calculation = Header(2)+Ctrl(1)+Cmd(1)+Len(2)+Data(data_length) = 6 + data_length
           uint8_t calculated_checksum = this->calculate_checksum_(this->buffer_.data(), 6 + this->data_length_);
 
           if (calculated_checksum == this->expected_checksum_)
           {
+            // Checksum matches, process the valid frame
             ESP_LOGV(TAG, "Received valid frame: %s", format_hex_pretty(this->buffer_).c_str());
             this->process_frame_(this->buffer_);
           }
           else
           {
+            // Checksum mismatch, log error and discard frame
             ESP_LOGW(TAG, "Checksum mismatch! Expected: 0x%02X, Calculated: 0x%02X. Frame: %s",
                      this->expected_checksum_, calculated_checksum, format_hex_pretty(this->buffer_).c_str());
           }
         }
         else
         {
+          // Second footer byte incorrect, discard frame
           ESP_LOGW(TAG, "Invalid footer byte 2: 0x%02X. Frame discarded.", byte);
         }
-        // Reset for next frame regardless of footer 2 validity or checksum result
+        // Reset state machine and buffer for the next frame, regardless of validity
         this->parse_state_ = ParseState::WAITING_HEADER_1;
-        this->buffer_.clear(); // Clear buffer for the next frame
+        this->buffer_.clear();
         this->data_length_ = 0;
         break;
       } // end switch
-
-      // Safety break: If buffer grows too large unexpectedly, reset state.
-      // This helps recover from potentially corrupted data streams.
-      if (this->buffer_.size() > MAX_FRAME_LENGTH + 10 && this->parse_state_ != ParseState::WAITING_HEADER_1)
-      {
-        ESP_LOGW(TAG, "Buffer size excessive (%d), forcing reset.", this->buffer_.size());
-        this->parse_state_ = ParseState::WAITING_HEADER_1;
-        this->buffer_.clear();
-      }
     }
 
     void R60ABD1::process_frame_(const std::vector<uint8_t> &frame)
     {
       // Frame structure: [Header(2)|Ctrl(1)|Cmd(1)|Len(2)|Data(N)|Chk(1)|Footer(2)]
-      // Minimum size is 9 (N=0)
-      if (frame.size() < 9)
-      {
-        ESP_LOGW(TAG, "Frame too short to process: %d bytes", frame.size());
-        return;
-      }
+      // We already validated checksum and footer in handle_byte_
 
       uint8_t control_word = frame[2];
       uint8_t command_word = frame[3];
       uint16_t length = (uint16_t(frame[4]) << 8) | frame[5];
       const uint8_t *data = frame.data() + 6; // Pointer to the start of the data field
 
-      // Verify actual data length matches header length field
-      // Actual data bytes = Total size - Header(2) - Ctrl(1) - Cmd(1) - Len(2) - Chk(1) - Footer(2) = size - 9
+      // Double-check length consistency (although should be correct if checksum passed)
       if (length != frame.size() - 9)
       {
-        ESP_LOGW(TAG, "Frame data length mismatch! Header says %d, actual is %d. Frame: %s",
-                 length, frame.size() - 9, format_hex_pretty(frame).c_str());
-        // Decide whether to proceed or discard. Let's try proceeding but be cautious.
-        // length = frame.size() - 9; // Use actual length? Or discard? Discarding is safer.
+        ESP_LOGW(TAG, "Internal length mismatch during processing! Header says %d, actual is %d.",
+                 length, frame.size() - 9);
+        // This case should ideally not happen if checksum validation is robust
         return;
       }
 
+      // Handle frame based on Control Word
       switch (control_word)
       {
-      case CTRL_HEARTBEAT: // 0x01
+      case CTRL_HEARTBEAT: // 0x01 - 心跳包
         if (command_word == 0x01 && length == 1 && data[0] == 0x0F)
         {
           ESP_LOGD(TAG, "Heartbeat received");
@@ -297,91 +304,112 @@ namespace esphome
         }
         break;
 
-      case CTRL_WORK_STATUS: // 0x05
+      case CTRL_WORK_STATUS: // 0x05 - 工作状态
         if (command_word == 0x01 && length == 1 && data[0] == 0x0F)
         {
-          ESP_LOGI(TAG, "Radar initialization complete.");
+          ESP_LOGI(TAG, "Radar initialization complete report received.");
         }
         else if (command_word == 0x81 && length == 1)
-        { // Reply to query
-          ESP_LOGI(TAG, "Radar initialization status: %s", data[0] == 0x01 ? "Complete" : "Not Complete");
+        { // Reply to initialization status query
+          ESP_LOGI(TAG, "Radar initialization status query response: %s", data[0] == 0x01 ? "已完成 (Complete)" : "未完成 (Not Complete)");
         }
         break;
 
-      case CTRL_PRESENCE: // 0x80
+      case CTRL_PRESENCE: // 0x80 - 人体存在
         switch (command_word)
         {
-        case CMD_PRESENCE_REPORT: // 0x01
+        case CMD_PRESENCE_REPORT: // 0x01 - 存在信息主动上报
           if (length == 1 && this->presence_sensor_ != nullptr)
           {
-            bool present = (data[0] == 0x01);
-            ESP_LOGD(TAG, "Presence report: %s", present ? "有人 (Present)" : "无人 (Absent)");
-            this->presence_sensor_->publish_state(present);
+            bool state = (data[0] == 0x01); // 01:有人, 00:无人
+            ESP_LOGD(TAG, "Presence report: %s", state ? "有人 (Present)" : "无人 (Absent)");
+            // Publish state only if it has changed
+            if (this->presence_sensor_->state != state)
+            {
+              this->presence_sensor_->publish_state(state);
+            }
           }
           break;
-        case CMD_MOTION_REPORT: // 0x02
+        case CMD_MOTION_REPORT: // 0x02 - 运动信息主动上报
           if (length == 1)
           {
-            int motion_state = data[0]; // 0: None, 1: Static, 2: Active
-            ESP_LOGD(TAG, "Motion report: %d", motion_state);
+            int motion_state_code = data[0]; // 0:无, 1:静止, 2:活跃
+            ESP_LOGD(TAG, "Motion report code: %d", motion_state_code);
+            // Update numerical motion state sensor
             if (this->motion_sensor_ != nullptr)
             {
-              this->motion_sensor_->publish_state(motion_state);
+              // Publish state only if it has changed
+              if (this->motion_sensor_->raw_state != motion_state_code)
+              {
+                this->motion_sensor_->publish_state(motion_state_code);
+              }
             }
+            // Update text motion state sensor
             if (this->motion_text_sensor_ != nullptr)
             {
-              switch (motion_state)
+              std::string state_str = "未知";
+              switch (motion_state_code)
               {
               case 0:
-                this->motion_text_sensor_->publish_state("无");
+                state_str = "无";
                 break;
               case 1:
-                this->motion_text_sensor_->publish_state("静止");
+                state_str = "静止";
                 break;
               case 2:
-                this->motion_text_sensor_->publish_state("活跃");
+                state_str = "活跃";
                 break;
-              default:
-                this->motion_text_sensor_->publish_state("未知");
-                break;
+              }
+              // Publish state only if it has changed
+              if (this->motion_text_sensor_->state != state_str)
+              {
+                this->motion_text_sensor_->publish_state(state_str);
               }
             }
           }
           break;
-        case CMD_BODY_MVMT_REPORT: // 0x03
+        case CMD_BODY_MVMT_REPORT: // 0x03 - 体动参数主动上报
           if (length == 1 && this->body_movement_sensor_ != nullptr)
           {
-            ESP_LOGD(TAG, "Body movement parameter: %d", data[0]);
-            this->body_movement_sensor_->publish_state(data[0]);
+            float value = data[0]; // 0-100
+            ESP_LOGD(TAG, "Body movement parameter: %.0f", value);
+            // Publish state only if it has changed
+            if (this->body_movement_sensor_->raw_state != value)
+            {
+              this->body_movement_sensor_->publish_state(value);
+            }
           }
           break;
-        case CMD_DISTANCE_REPORT: // 0x04
+        case CMD_DISTANCE_REPORT: // 0x04 - 人体距离主动上报
           if (length == 2 && this->distance_sensor_ != nullptr)
           {
-            uint16_t distance = (uint16_t(data[0]) << 8) | data[1];
-            ESP_LOGD(TAG, "Distance report: %d cm", distance);
-            if (distance <= 65530)
-            { // Assuming 65535 is invalid/max range
-              this->distance_sensor_->publish_state(distance);
+            uint16_t distance_cm = (uint16_t(data[0]) << 8) | data[1];
+            ESP_LOGD(TAG, "Distance report: %d cm", distance_cm);
+            float value = NAN; // Default to Not a Number
+            if (distance_cm <= 65530)
+            { // Assuming 65535 etc. are invalid/out of range
+              value = distance_cm;
             }
-            else
+            // Publish state only if it has changed (handle NAN comparison carefully)
+            if (isnan(this->distance_sensor_->raw_state) ? !isnan(value) : (this->distance_sensor_->raw_state != value))
             {
-              this->distance_sensor_->publish_state(NAN);
+              this->distance_sensor_->publish_state(value);
             }
           }
           break;
-        case CMD_POSITION_REPORT: // 0x05
+        case CMD_POSITION_REPORT: // 0x05 - 人体方位主动上报
           if (length == 6)
           {
             int16_t x = decode_16bit_signed_(data[0], data[1]);
             int16_t y = decode_16bit_signed_(data[2], data[3]);
             int16_t z = decode_16bit_signed_(data[4], data[5]);
             ESP_LOGD(TAG, "Position report: X=%d cm, Y=%d cm, Z=%d cm", x, y, z);
-            if (this->position_x_sensor_ != nullptr)
+            // Publish states only if they have changed
+            if (this->position_x_sensor_ != nullptr && this->position_x_sensor_->raw_state != x)
               this->position_x_sensor_->publish_state(x);
-            if (this->position_y_sensor_ != nullptr)
+            if (this->position_y_sensor_ != nullptr && this->position_y_sensor_->raw_state != y)
               this->position_y_sensor_->publish_state(y);
-            if (this->position_z_sensor_ != nullptr)
+            if (this->position_z_sensor_ != nullptr && this->position_z_sensor_->raw_state != z)
               this->position_z_sensor_->publish_state(z);
           }
           break;
@@ -394,20 +422,24 @@ namespace esphome
         }
         break;
 
-      case CTRL_HEART_RATE: // 0x85
+      case CTRL_HEART_RATE: // 0x85 - 心率监测
         switch (command_word)
         {
-        case CMD_HEART_RATE_VALUE_REPORT: // 0x02
+        case CMD_HEART_RATE_VALUE_REPORT: // 0x02 - 心率数值上报
           if (length == 1 && this->heart_rate_sensor_ != nullptr)
           {
-            ESP_LOGD(TAG, "Heart rate report: %d bpm", data[0]);
-            if (data[0] > 0 && data[0] < 200)
-            { // More realistic check
-              this->heart_rate_sensor_->publish_state(data[0]);
-            }
-            else
+            uint8_t hr_value = data[0];
+            ESP_LOGD(TAG, "Heart rate report: %d bpm", hr_value);
+            float value = NAN;
+            // Check if value is within plausible range (e.g., 30-200)
+            if (hr_value >= 30 && hr_value <= 200)
             {
-              this->heart_rate_sensor_->publish_state(NAN);
+              value = hr_value;
+            }
+            // Publish state only if it has changed
+            if (isnan(this->heart_rate_sensor_->raw_state) ? !isnan(value) : (this->heart_rate_sensor_->raw_state != value))
+            {
+              this->heart_rate_sensor_->publish_state(value);
             }
           }
           break;
@@ -420,7 +452,9 @@ namespace esphome
           if (length == 1)
             ESP_LOGD(TAG, "Heart rate waveform reporting query response: %s", data[0] == 0x01 ? "Enabled" : "Disabled");
           break;
-        case CMD_HEART_RATE_WAVEFORM_REPORT: // 0x05
+        // Ignore waveform data (0x05) for now
+        case CMD_HEART_RATE_WAVE_REPORT: // 0x05
+          ESP_LOGV(TAG, "Heart rate waveform data received (ignored).");
           if (length == 6)
           {
             ESP_LOGD(TAG, "Heart rate waveform report: %02X %02X %02X %02X %02X",
@@ -450,10 +484,10 @@ namespace esphome
         }
         break;
 
-      case CTRL_RESPIRATION: // 0x81
+      case CTRL_RESPIRATION: // 0x81 - 呼吸检测
         switch (command_word)
         {
-        case CMD_RESPIRATION_INFO_REPORT: // 0x01
+        case CMD_RESPIRATION_INFO_REPORT: // 0x01 - 呼吸信息上报
           if (length == 1 && this->respiration_info_sensor_ != nullptr)
           {
             std::string info_str = "未知";
@@ -470,23 +504,31 @@ namespace esphome
               break;
             case 0x04:
               info_str = "无";
-              break;
+              break; // 无呼吸/无人
             }
             ESP_LOGD(TAG, "Respiration info report: %s", info_str.c_str());
-            this->respiration_info_sensor_->publish_state(info_str);
+            // Publish state only if it has changed
+            if (this->respiration_info_sensor_->state != info_str)
+            {
+              this->respiration_info_sensor_->publish_state(info_str);
+            }
           }
           break;
-        case CMD_RESPIRATION_VALUE_REPORT: // 0x02
+        case CMD_RESPIRATION_VALUE_REPORT: // 0x02 - 呼吸数值上报
           if (length == 1 && this->respiration_rate_sensor_ != nullptr)
           {
-            ESP_LOGD(TAG, "Respiration rate report: %d rpm", data[0]);
-            if (data[0] > 0 && data[0] < 50)
-            { // More realistic check
-              this->respiration_rate_sensor_->publish_state(data[0]);
-            }
-            else
+            uint8_t resp_value = data[0];
+            ESP_LOGD(TAG, "Respiration rate report: %d rpm", resp_value);
+            float value = NAN;
+            // Check if value is within plausible range (e.g., 1-50)
+            if (resp_value >= 1 && resp_value <= 50)
             {
-              this->respiration_rate_sensor_->publish_state(NAN);
+              value = resp_value;
+            }
+            // Publish state only if it has changed
+            if (isnan(this->respiration_rate_sensor_->raw_state) ? !isnan(value) : (this->respiration_rate_sensor_->raw_state != value))
+            {
+              this->respiration_rate_sensor_->publish_state(value);
             }
           }
           break;
@@ -510,7 +552,9 @@ namespace esphome
             ESP_LOGD(TAG, "Respiration low threshold set confirmation: %d", data[0]);
           // Could potentially update number entity state if implemented
           break;
-        case CMD_RESPIRATION_WAVEFORM_REPORT: // 0x05
+        // Ignore waveform data (0x05) for now
+        case CMD_RESPIRATION_WAVE_REPORT: // 0x05
+          ESP_LOGV(TAG, "Respiration waveform data received (ignored).");
           if (length == 6)
           {
             ESP_LOGD(TAG, "Respiration waveform report: %02X %02X %02X %02X %02X",
@@ -536,30 +580,31 @@ namespace esphome
               this->respiration_wave_4_sensor_->publish_state(data[4]);
             }
           }
+          break;
         }
         break;
 
-      case CTRL_SLEEP_MONITOR: // 0x84
+      case CTRL_SLEEP_MONITOR: // 0x84 - 睡眠监测
         switch (command_word)
         {
-        case CMD_SLEEP_BED_STATUS_REPORT: // 0x01
+        // Handle status reports
+        case CMD_SLEEP_BED_STATUS_REPORT: // 0x01 - 入床/离床状态
           if (length == 1 && this->bed_status_sensor_ != nullptr)
           {
-            bool in_bed = (data[0] == 0x01);
-            ESP_LOGD(TAG, "Bed status report: %s", in_bed ? "在床 (In Bed)" : (data[0] == 0x00 ? "离床 (Out of Bed)" : "无 (None)"));
-            if (data[0] == 0x00 || data[0] == 0x01)
+            // 0x00:离床, 0x01:入床, 0x02:无(实时探测模式下显示)
+            bool state = (data[0] == 0x01); // Treat 0x00 and 0x02 as 'false' (not in bed)
+            ESP_LOGD(TAG, "Bed status report: %s (Raw: 0x%02X)", state ? "在床 (In Bed)" : "离床/无 (Out/None)", data[0]);
+            // Publish state only if it has changed
+            if (this->bed_status_sensor_->state != state)
             {
-              this->bed_status_sensor_->publish_state(in_bed);
-            }
-            else
-            {
-              this->bed_status_sensor_->publish_state(false); // Treat 'None' as out of bed
+              this->bed_status_sensor_->publish_state(state);
             }
           }
           break;
-        case CMD_SLEEP_STAGE_REPORT: // 0x02
+        case CMD_SLEEP_STAGE_REPORT: // 0x02 - 睡眠状态
           if (length == 1 && this->sleep_stage_sensor_ != nullptr)
           {
+            // 0x00:深睡, 0x01:浅睡, 0x02:清醒, 0x03:无(离床时/实时探测模式下上报)
             std::string stage_str = "未知";
             switch (data[0])
             {
@@ -577,7 +622,11 @@ namespace esphome
               break;
             }
             ESP_LOGD(TAG, "Sleep stage report: %s", stage_str.c_str());
-            this->sleep_stage_sensor_->publish_state(stage_str);
+            // Publish state only if it has changed
+            if (this->sleep_stage_sensor_->state != stage_str)
+            {
+              this->sleep_stage_sensor_->publish_state(stage_str);
+            }
           }
           break;
         case CMD_SLEEP_SCORE_REPORT: // 0x06 - 睡眠质量评分
@@ -650,17 +699,20 @@ namespace esphome
         }
         break;
 
-        // Add cases for other control words (Product Info, OTA, Radar Range) if needed
+        // Handle other Control Words if necessary
+        // case CTRL_RADAR_RANGE: // 0x07
+        //    ...
+        //    break;
 
       default:
-        ESP_LOGV(TAG, "Unhandled frame - Control: 0x%02X, Command: 0x%02X", control_word, command_word);
+        ESP_LOGV(TAG, "Ignoring frame with unhandled Control Word: 0x%02X, Command: 0x%02X", control_word, command_word);
         break;
       }
     }
 
     // --- Send Command Implementation ---
     // Constructs and sends a command frame over UART
-    void MicRadarR60ABD1::send_command(uint8_t control_word, uint8_t command_word, const std::vector<uint8_t> &data_payload)
+    void R60ABD1::send_command(uint8_t control_word, uint8_t command_word, const std::vector<uint8_t> &data_payload)
     {
       std::vector<uint8_t> frame;
       size_t payload_size = data_payload.size();
@@ -701,43 +753,43 @@ namespace esphome
     // --- Control Methods Implementations ---
     // These methods are called by the code generated from switch.py, number.py, select.py
 
-    void MicRadarR60ABD1::set_presence_detection(bool enable)
+    void R60ABD1::set_presence_detection(bool enable)
     {
       ESP_LOGD(TAG, "Setting presence detection: %s", enable ? "ON" : "OFF");
       this->send_command(CTRL_PRESENCE, CMD_PRESENCE_SWITCH, {enable ? (uint8_t)0x01 : (uint8_t)0x00});
     }
 
-    void MicRadarR60ABD1::set_heart_rate_detection(bool enable)
+    void R60ABD1::set_heart_rate_detection(bool enable)
     {
       ESP_LOGD(TAG, "Setting heart rate detection: %s", enable ? "ON" : "OFF");
       this->send_command(CTRL_HEART_RATE, CMD_HEART_RATE_SWITCH, {enable ? (uint8_t)0x01 : (uint8_t)0x00});
     }
 
-    void MicRadarR60ABD1::set_respiration_detection(bool enable)
+    void R60ABD1::set_respiration_detection(bool enable)
     {
       ESP_LOGD(TAG, "Setting respiration detection: %s", enable ? "ON" : "OFF");
       this->send_command(CTRL_RESPIRATION, CMD_RESPIRATION_SWITCH, {enable ? (uint8_t)0x01 : (uint8_t)0x00});
     }
 
-    void MicRadarR60ABD1::set_sleep_monitoring(bool enable)
+    void R60ABD1::set_sleep_monitoring(bool enable)
     {
       ESP_LOGD(TAG, "Setting sleep monitoring: %s", enable ? "ON" : "OFF");
       this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_SWITCH, {enable ? (uint8_t)0x01 : (uint8_t)0x00});
     }
 
-    void MicRadarR60ABD1::set_heart_rate_waveform_reporting(bool enable)
+    void R60ABD1::set_heart_rate_waveform_reporting(bool enable)
     {
       ESP_LOGD(TAG, "Setting heart rate waveform reporting: %s", enable ? "ON" : "OFF");
       this->send_command(CTRL_HEART_RATE, CMD_HEART_RATE_WAVE_SWITCH, {enable ? (uint8_t)0x01 : (uint8_t)0x00});
     }
 
-    void MicRadarR60ABD1::set_respiration_waveform_reporting(bool enable)
+    void R60ABD1::set_respiration_waveform_reporting(bool enable)
     {
       ESP_LOGD(TAG, "Setting respiration waveform reporting: %s", enable ? "ON" : "OFF");
       this->send_command(CTRL_RESPIRATION, CMD_RESPIRATION_WAVE_SWITCH, {enable ? (uint8_t)0x01 : (uint8_t)0x00});
     }
 
-    void MicRadarR60ABD1::set_respiration_low_threshold(uint8_t threshold)
+    void R60ABD1::set_respiration_low_threshold(uint8_t threshold)
     {
       // Clamp value to protocol range [10, 20]
       uint8_t clamped_threshold = std::max((uint8_t)10, std::min(threshold, (uint8_t)20));
@@ -749,19 +801,19 @@ namespace esphome
       this->send_command(CTRL_RESPIRATION, CMD_RESPIRATION_LOW_THRESHOLD_SET, {clamped_threshold});
     }
 
-    void MicRadarR60ABD1::set_struggle_detection(bool enable)
+    void R60ABD1::set_struggle_detection(bool enable)
     {
       ESP_LOGD(TAG, "Setting struggle detection: %s", enable ? "ON" : "OFF");
       this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_STRUGGLE_SWITCH_SET, {enable ? (uint8_t)0x01 : (uint8_t)0x00});
     }
 
-    void MicRadarR60ABD1::set_unattended_detection(bool enable)
+    void R60ABD1::set_unattended_detection(bool enable)
     {
       ESP_LOGD(TAG, "Setting unattended detection: %s", enable ? "ON" : "OFF");
       this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_UNATTENDED_SWITCH_SET, {enable ? (uint8_t)0x01 : (uint8_t)0x00});
     }
 
-    void MicRadarR60ABD1::set_unattended_time(uint8_t minutes)
+    void R60ABD1::set_unattended_time(uint8_t minutes)
     {
       // Clamp value to protocol range [30, 180]
       uint8_t clamped_minutes = std::max((uint8_t)30, std::min(minutes, (uint8_t)180));
@@ -774,7 +826,7 @@ namespace esphome
       this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_UNATTENDED_TIME_SET, {clamped_minutes});
     }
 
-    void MicRadarR60ABD1::set_sleep_end_time(uint8_t minutes)
+    void R60ABD1::set_sleep_end_time(uint8_t minutes)
     {
       // Clamp value to protocol range [5, 120]
       uint8_t clamped_minutes = std::max((uint8_t)5, std::min(minutes, (uint8_t)120));
@@ -786,7 +838,7 @@ namespace esphome
       this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_END_TIME_SET, {clamped_minutes});
     }
 
-    void MicRadarR60ABD1::set_struggle_sensitivity(uint8_t level)
+    void R60ABD1::set_struggle_sensitivity(uint8_t level)
     {
       // Clamp value to protocol range [0, 2]
       uint8_t clamped_level = std::min(level, (uint8_t)2);

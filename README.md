@@ -1,4 +1,4 @@
-# ESPHome Project Template
+# mmwave-esphome-component
 
 This repo serves as a template for creating a new ESPHome project.
 
@@ -6,8 +6,10 @@ It includes a GitHub workflow that will automatically build the configuration(s)
 website via GitHub pages that utilises [ESP Web Tools](https://esphome.github.io/esp-web-tools/) for users to 
 easily install your project onto their device.
 
-## Instructions
+## Support Modules
 
-1. Use this repo template to [generate](https://github.com/esphome/esphome-project-template/generate) your own repository.
-2. Clone your new repository.
-3. Follow the checklist created as an issue in your new repository.
+- [MicRadar](https://www.micradar.cn/) 
+    - [R60ABD1](./docs/r60abd1/README.md)
+
+- [HiLink](https://www.hlktech.com/)
+
