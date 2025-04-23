@@ -9,5 +9,165 @@ R60ABD1 does not have wireless communication capabilities, so if you want R60ABD
 * [R60ABD1](https://www.micradar.cn/), with firmware version G60SM1SYv010204. Follow flashing instructions in [Flash Guide](./flash_guide.pdf) and flash [/docs/r60abd1/firmware_G60SM1SYv010204.bin](./firmware_G60SM1SYv010204.bin) into R60ABD1.
 * [HomeAssistant](https://www.home-assistant.io/), latest version is recommended.
 * [ESPHome](https://esphome.io/), latest version is recommended.
-* [ESP32/ESP32-S3/ESP32-S2/ESP32-C3](https://www.espressif.com/), ESP32-S3 is recommended.
+* [ESP32/ESP32-S3/ESP32-S2/ESP32-C3](https://www.espressif.com/), ESP32-S3 is recommended. In this guide, we will use ESP32-S3: GPIO14 (ESP32-S3 RX) to R60ABD1 TX, GPIO15 (ESP32-S3 TX) to R60ABD1 RX. The wiring diagram could be:
+![Wiring Diagram](./wiring_diagram.png).
 
+## Installation
+In this guide, we provide an [example.yaml](./example.yaml) file that can be directly imported into HomeAssistant:
+
+```yaml
+external_components:
+  # Include the r60abd1 component
+  # - source: https://github.com/zomco/mmwave-esphome-component
+  - source: ../../components
+    component: r60abd1
+
+packages:
+  # Include all of the core configuration
+  core: !include ../common.yaml
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+
+esphome:
+  name: r60abd1
+  friendly_name: r60abd1
+  # This will allow for project identification,
+  # configuration and updates.
+  project:
+    name: r60abd1-s3
+    version: dev # This will be replaced by the github workflows with the `release` version
+
+# This should point to the public location of the yaml file that will be adopted.
+# In this case it is the core yaml file that does not contain the extra things
+# that are provided by this factory yaml file as the user does not need these once adopted.
+dashboard_import:
+  package_import_url: github://zomco/mmwave-esphome-component/r60abd1-s3.yaml@main
+
+
+# Configure the UART bus
+# 配置用于连接雷达的 UART 总线
+uart:
+  id: uart_bus # UART 总线的 ID
+  tx_pin: GPIO13 # 根据您的 ESP 连接到雷达 RX 的引脚进行调整
+  rx_pin: GPIO14 # 根据您的 ESP 连接到雷达 TX 的引脚进行调整
+  baud_rate: 115200 # 波特率，根据雷达协议文档设置
+
+# Configure the component hub
+# 配置 MicRadar 组件核心
+micradar_r60abd1:
+  id: radar_hub # 组件核心的 ID
+  uart_id: uart_bus # 将其链接到上面定义的 UART 总线
+
+# Configure Sensors
+# 配置传感器 (数值型)
+sensor:
+  - platform: r60abd1 # 平台名称与组件文件夹名称匹配
+    id: radar_hub # 将每个传感器链接到核心组件 ID
+    distance:
+      name: "毫米波雷达 人体距离" # Home Assistant 中显示的名称
+      # unit_of_measurement, icon 等在 sensor.py 中定义
+      # 如果需要，可以在此处覆盖它们，例如：
+      # icon: "mdi:map-marker-radius"
+    motion_state:
+      name: "毫米波雷达 运动状态码" # 0:无, 1:静止, 2:活跃
+    body_movement:
+      name: "毫米波雷达 体动幅度" # 0-100
+    heart_rate:
+      name: "毫米波雷达 心率" # bpm
+      # 可选：应用过滤器以排除不合理的值
+      filters:
+        - range:
+            min: 30.0
+            max: 200.0
+    respiration_rate:
+      name: "毫米波雷达 呼吸率" # rpm
+      # 可选：应用过滤器
+      filters:
+        - range:
+            min: 1.0
+            max: 50.0
+    sleep_score:
+      name: "毫米波雷达 睡眠评分" # 0-100
+    position_x:
+      name: "毫米波雷达 位置 X" # cm
+    position_y:
+      name: "毫米波雷达 位置 Y" # cm
+    position_z:
+      name: "毫米波雷达 位置 Z" # cm
+
+# Configure Binary Sensors
+# 配置二进制传感器 (开关型)
+binary_sensor:
+  - platform: micradar_r60abd1
+    id: radar_hub # 链接到核心
+    presence:
+      name: "毫米波雷达 人体存在" # true: 有人, false: 无人
+    bed_status:
+      name: "毫米波雷达 在床状态" # true: 在床, false: 离床
+
+# Configure Text Sensors
+# 配置文本传感器
+text_sensor:
+  - platform: micradar_r60abd1
+    id: radar_hub # 链接到核心
+    motion_text:
+      name: "毫米波雷达 运动状态" # 无, 静止, 活跃
+    respiration_info:
+      name: "毫米波雷达 呼吸信息" # 正常, 过高, 过低, 无
+    sleep_stage:
+      name: "毫米波雷达 睡眠阶段" # 深睡, 浅睡, 清醒, 无
+    firmware_version:
+      name: "毫米波雷达 固件版本" # 显示雷达的固件版本号
+
+# --- Configure Control Entities ---
+# --- 配置控制实体 ---
+
+# Configure Switches
+# 配置开关
+switch:
+  - platform: micradar_r60abd1
+    id: radar_hub # 链接到核心
+    presence_detection: # 对应 switch.py 中的 key
+      name: "雷达 人体存在检测开关"
+    heart_rate_detection:
+      name: "雷达 心率检测开关"
+    respiration_detection:
+      name: "雷达 呼吸检测开关"
+    sleep_monitoring:
+      name: "雷达 睡眠监测开关"
+    heart_rate_waveform:
+      name: "雷达 心率波形上报开关"
+    respiration_waveform:
+      name: "雷达 呼吸波形上报开关"
+    struggle_detection:
+      name: "雷达 异常挣扎检测开关"
+    unattended_detection:
+      name: "雷达 无人计时功能开关"
+
+# Configure Numbers
+# 配置数字输入
+number:
+  - platform: micradar_r60abd1
+    id: radar_hub # 链接到核心
+    respiration_low_threshold: # 对应 number.py 中的 key
+      name: "雷达 呼吸过低阈值" # 设置呼吸率低于多少时报告“过低”
+      # min/max/step 在 number.py 中定义 (10-20 rpm, step 1)
+    unattended_time:
+      name: "雷达 无人计时时长" # 设置无人多久后触发“无人计时异常”
+      # min/max/step 在 number.py 中定义 (30-180 min, step 10)
+    sleep_end_time:
+      name: "雷达 睡眠截止时长" # 设置离床多久后判断睡眠结束
+      # min/max/step 在 number.py 中定义 (5-120 min, step 1)
+
+# Configure Selects
+# 配置选择框
+select:
+  - platform: micradar_r60abd1
+    id: radar_hub # 链接到核心
+    struggle_sensitivity: # 对应 select.py 中的 key
+      name: "雷达 挣扎检测灵敏度" # 设置异常挣扎检测的灵敏度
+      # options 在 select.py 中定义 (Low, Medium, High)
+```

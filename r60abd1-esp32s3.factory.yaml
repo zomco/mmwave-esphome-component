@@ -1,46 +1,74 @@
-packages:
-  # Include all of the core configuration
-  core: !include ../common.yaml
+external_components:
+  # Include the r60abd1 component
+  # - source: https://github.com/zomco/mmwave-esphome-component
+  - source: ../../components
+    component: r60abd1
+
+esphome:
+  name: r60abd1-example
+  friendly_name: R60ABD1
+  # This will allow for project identification,
+  # configuration and updates.
+  project:
+    name: zomco.r60abd1
+    version: dev # This will be replaced by the github workflows with the `release` version
+  # Automatically add the mac address to the name
+  # so you can use a single firmware for all devices
+  name_add_mac_suffix: true
+
+# To be able to get logs from the device via serial and api.
+logger:
+
+# API is a requirement of the dashboard import.
+api:
+
+# OTA is required for Over-the-Air updating
+ota:
+  - platform: esphome
+
+wifi:
+  # Set up a wifi access point using the device name above
+  ap:
+
+# In combination with the `ap` this allows the user
+# to provision wifi credentials to the device.
+captive_portal:
+
+# Sets up Bluetooth LE (Only on ESP32) to allow the user
+# to provision wifi credentials to the device.
+esp32_improv:
+  authorizer: none
+
+# Sets up the improv via serial client for Wi-Fi provisioning.
+# Handy if your device has a usb port for the user to add credentials when they first get it.
+improv_serial:
 
 esp32:
   board: esp32-s3-devkitc-1
   framework:
     type: esp-idf
 
-esphome:
-  name: r60abd1
-  friendly_name: r60abd1
-  # This will allow for project identification,
-  # configuration and updates.
-  project:
-    name: r60abd1-s3
-    version: dev # This will be replaced by the github workflows with the `release` version
-
 # This should point to the public location of the yaml file that will be adopted.
 # In this case it is the core yaml file that does not contain the extra things
 # that are provided by this factory yaml file as the user does not need these once adopted.
 dashboard_import:
-  package_import_url: github://zomco/mmwave-esphome-component/r60abd1-s3.yaml@main
-
+  package_import_url: github://zomco/mmwave-esphome-component/r60abd1.yaml@main
 
 # Configure the UART bus
-# 配置用于连接雷达的 UART 总线
 uart:
   id: uart_bus # UART 总线的 ID
-  tx_pin: GPIO14 # 根据您的 ESP 连接到雷达 RX 的引脚进行调整
-  rx_pin: GPIO13 # 根据您的 ESP 连接到雷达 TX 的引脚进行调整
+  tx_pin: GPIO13 # 根据您的 ESP 连接到雷达 RX 的引脚进行调整
+  rx_pin: GPIO14 # 根据您的 ESP 连接到雷达 TX 的引脚进行调整
   baud_rate: 115200 # 波特率，根据雷达协议文档设置
 
-# Configure the MicRadar component hub
-# 配置 MicRadar 组件核心
+# Configure the component hub
 micradar_r60abd1:
   id: radar_hub # 组件核心的 ID
   uart_id: uart_bus # 将其链接到上面定义的 UART 总线
 
 # Configure Sensors
-# 配置传感器 (数值型)
 sensor:
-  - platform: micradar_r60abd1 # 平台名称与组件文件夹名称匹配
+  - platform: r60abd1 # 平台名称与组件文件夹名称匹配
     id: radar_hub # 将每个传感器链接到核心组件 ID
     distance:
       name: "毫米波雷达 人体距离" # Home Assistant 中显示的名称
@@ -75,7 +103,6 @@ sensor:
       name: "毫米波雷达 位置 Z" # cm
 
 # Configure Binary Sensors
-# 配置二进制传感器 (开关型)
 binary_sensor:
   - platform: micradar_r60abd1
     id: radar_hub # 链接到核心
@@ -85,7 +112,6 @@ binary_sensor:
       name: "毫米波雷达 在床状态" # true: 在床, false: 离床
 
 # Configure Text Sensors
-# 配置文本传感器
 text_sensor:
   - platform: micradar_r60abd1
     id: radar_hub # 链接到核心
@@ -99,10 +125,8 @@ text_sensor:
       name: "毫米波雷达 固件版本" # 显示雷达的固件版本号
 
 # --- Configure Control Entities ---
-# --- 配置控制实体 ---
 
 # Configure Switches
-# 配置开关
 switch:
   - platform: micradar_r60abd1
     id: radar_hub # 链接到核心
@@ -124,7 +148,6 @@ switch:
       name: "雷达 无人计时功能开关"
 
 # Configure Numbers
-# 配置数字输入
 number:
   - platform: micradar_r60abd1
     id: radar_hub # 链接到核心
@@ -139,7 +162,6 @@ number:
       # min/max/step 在 number.py 中定义 (5-120 min, step 1)
 
 # Configure Selects
-# 配置选择框
 select:
   - platform: micradar_r60abd1
     id: radar_hub # 链接到核心
