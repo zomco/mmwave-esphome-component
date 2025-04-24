@@ -31,7 +31,7 @@ uart:
   baud_rate: 115200
 
 # Configure the component hub
-micradar_r60abd1:
+r60abd1:
   id: radar_hub # 组件核心的 ID
   uart_id: uart_bus # 将其链接到上面定义的 UART 总线
 
