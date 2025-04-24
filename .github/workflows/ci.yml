@@ -27,8 +27,13 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4.1.7
-      - name: ESPHome ${{ matrix.esphome-version }}
+      - name: ESPHome Stable
         uses: esphome/build-action@v6.0.0
         with:
-          yaml-file: ${{ matrix.file }}.yaml
-          version: ${{ matrix.esphome-version }}
+          yaml-file: ${{ matrix.component }}-${{ matrix.target }}.yaml
+          version: stable
+      - name: ESPHome Stable Factory
+        uses: esphome/build-action@v6.0.0
+        with:
+          yaml-file: ${{ matrix.component }}-${{ matrix.target }}.factory.yaml
+          version: stable

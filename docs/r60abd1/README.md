@@ -9,11 +9,11 @@ R60ABD1 does not have wireless communication capabilities, so if you want R60ABD
 * [R60ABD1](https://www.micradar.cn/), with firmware version G60SM1SYv010204. Follow flashing instructions in [Flash Guide](./flash_guide.pdf) and flash [/docs/r60abd1/firmware_G60SM1SYv010204.bin](./firmware_G60SM1SYv010204.bin) into R60ABD1.
 * [HomeAssistant](https://www.home-assistant.io/), latest version is recommended.
 * [ESPHome](https://esphome.io/), latest version is recommended.
-* [ESP32/ESP32-S3/ESP32-S2/ESP32-C3](https://www.espressif.com/), ESP32-S3 is recommended. In this guide, we will use ESP32-S3: GPIO14 (ESP32-S3 RX) to R60ABD1 TX, GPIO15 (ESP32-S3 TX) to R60ABD1 RX. The wiring diagram could be:
+* [ESP32/ESP32-S3/ESP32-S2/ESP32-C3](https://www.espressif.com/), ESP32-S3 is recommended. In this guide, we will use ESP32-S3: **GPIO14 (ESP32-S3 RX) to R60ABD1 TX**, **GPIO15 (ESP32-S3 TX) to R60ABD1 RX**. The wiring diagram could be:
 ![Wiring Diagram](./wiring_diagram.png).
 
 ## Installation
-In this guide, we provide an [example.yaml](./example.yaml) file that can be directly imported into HomeAssistant:
+In this guide, we provide an example.yaml file that can be directly imported into HomeAssistant:
 
 ```yaml
 external_components:

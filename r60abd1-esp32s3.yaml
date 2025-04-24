@@ -1,9 +1,3 @@
-external_components:
-  # Include the r60abd1 component
-  # - source: https://github.com/zomco/mmwave-esphome-component
-  - source: ../../components
-    component: r60abd1
-
 esphome:
   name: r60abd1-esp32s3-example
   friendly_name: r60abd1-esp32s3
