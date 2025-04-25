@@ -1,14 +1,14 @@
 esphome:
-  name: r60abd1-esp32s3-example
-  friendly_name: r60abd1-esp32s3
+  name: mmwave
+  friendly_name: mmwave
   # Automatically add the mac address to the name
   # so you can use a single firmware for all devices
   name_add_mac_suffix: true
-
-esp32:
-  board: esp32-s3-devkitc-1
-  framework:
-    type: esp-idf
+    # This will allow for project identification,
+  # configuration and updates.
+  project:
+    name: owkor.mmwave
+    version: dev # This will be replaced by the github workflows with the `release` version
 
 # To be able to get logs from the device via serial and api.
 logger:
@@ -23,17 +23,10 @@ ota:
 wifi:
   # Set up a wifi access point using the device name above
   ap:
-    ssid: "mmwave-r60abd1"
 
 # In combination with the `ap` this allows the user
 # to provision wifi credentials to the device.
 captive_portal:
-
-# This should point to the public location of the yaml file that will be adopted.
-# In this case it is the core yaml file that does not contain the extra things
-# that are provided by this factory yaml file as the user does not need these once adopted.
-dashboard_import:
-  package_import_url: github://github.com/zomco/mmwave-esphome-component/r60abd1-esp32s3.yaml@main
 
 # Sets up Bluetooth LE (Only on ESP32) to allow the user
 # to provision wifi credentials to the device.
@@ -43,3 +36,9 @@ esp32_improv:
 # Sets up the improv via serial client for Wi-Fi provisioning.
 # Handy if your device has a usb port for the user to add credentials when they first get it.
 improv_serial:
+
+# This should point to the public location of the yaml file that will be adopted.
+# In this case it is the core yaml file that does not contain the extra things
+# that are provided by this factory yaml file as the user does not need these once adopted.
+dashboard_import:
+  package_import_url: github://zomco/mmwave-esphome-component/mmwave-common.yaml@main

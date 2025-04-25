@@ -10,7 +10,7 @@ from esphome.const import (
 )
 
 # Import the namespace and hub class from __init__.py
-from . import r60abd1_ns, R60ABD1
+from . import r60abd1_ns, R60ABD1Component
 
 # Define key for YAML configuration
 CONF_STRUGGLE_SENSITIVITY = "struggle_sensitivity"
@@ -26,7 +26,7 @@ STRUGGLE_SENSITIVITY_OPTIONS = ["Low", "Medium", "High"]  # Corresponds to 0, 1,
 # Configuration schema for the select entities
 CONFIG_SCHEMA = cv.Schema(
     {
-        cv.GenerateID(CONF_ID): cv.use_id(R60ABD1),  # Reference the hub ID
+        cv.GenerateID(CONF_ID): cv.use_id(R60ABD1Component),  # Reference the hub ID
         # Define schema for struggle sensitivity
         cv.Optional(CONF_STRUGGLE_SENSITIVITY): select.select_schema(
             icon="mdi:tune-variant",  # Icon for sensitivity/tuning

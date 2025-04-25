@@ -15,7 +15,7 @@ from esphome.const import (
 )
 
 # Import the namespace and hub class from __init__.py
-from . import r60abd1_ns, R60ABD1
+from . import r60abd1_ns, R60ABD1Component
 
 # Define keys for YAML configuration
 CONF_RESPIRATION_LOW_THRESHOLD = "respiration_low_threshold"
@@ -32,7 +32,7 @@ TYPES = [
 # Configuration schema for the numbers
 CONFIG_SCHEMA = cv.Schema(
     {
-        cv.GenerateID(CONF_ID): cv.use_id(R60ABD1),  # Reference the hub ID
+        cv.GenerateID(CONF_ID): cv.use_id(R60ABD1Component),  # Reference the hub ID
         # Define schema for each number type
         cv.Optional(CONF_RESPIRATION_LOW_THRESHOLD): number.number_schema(
             icon="mdi:transfer-down",  # Icon indicating a lower threshold

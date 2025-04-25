@@ -27,25 +27,51 @@ from esphome.const import (
 )
 
 # Import the namespace and hub class from __init__.py
-from . import r60abd1_ns, R60ABD1
+from . import r60abd1_ns, R60ABD1Component
 
 # Define keys for YAML configuration specific to this component's sensors
+CONF_DISTANCE = "distance"
+CONF_HEART_RATE = "heart_rate"
 CONF_MOTION_STATE = "motion_state"
 CONF_BODY_MOVEMENT = "body_movement"
 CONF_RESPIRATION_RATE = "respiration_rate"
 CONF_SLEEP_SCORE = "sleep_score"
+CONF_POSITION_X = "position_x"
+CONF_POSITION_Y = "position_y"
+CONF_POSITION_Z = "position_z"
+CONF_HEART_RATE_WAVE_0 = "heart_rate_wave_0"
+CONF_HEART_RATE_WAVE_1 = "heart_rate_wave_1"
+CONF_HEART_RATE_WAVE_2 = "heart_rate_wave_2"
+CONF_HEART_RATE_WAVE_3 = "heart_rate_wave_3"
+CONF_HEART_RATE_WAVE_4 = "heart_rate_wave_4"
+CONF_RESPIRATION_RATE_WAVE_0 = "respiration_rate_wave_0"
+CONF_RESPIRATION_RATE_WAVE_1 = "respiration_rate_wave_1"
+CONF_RESPIRATION_RATE_WAVE_2 = "respiration_rate_wave_2"
+CONF_RESPIRATION_RATE_WAVE_3 = "respiration_rate_wave_3"
+CONF_RESPIRATION_RATE_WAVE_4 = "respiration_rate_wave_4"
+
 
 # Define sensor types provided by this component
 TYPES = [
     CONF_DISTANCE,
+    CONF_HEART_RATE,
     CONF_MOTION_STATE,
     CONF_BODY_MOVEMENT,
-    CONF_HEART_RATE,
     CONF_RESPIRATION_RATE,
     CONF_SLEEP_SCORE,
     CONF_POSITION_X,
     CONF_POSITION_Y,
     CONF_POSITION_Z,
+    CONF_HEART_RATE_WAVE_0,
+    CONF_HEART_RATE_WAVE_1,
+    CONF_HEART_RATE_WAVE_2,
+    CONF_HEART_RATE_WAVE_3,
+    CONF_HEART_RATE_WAVE_4,
+    CONF_RESPIRATION_RATE_WAVE_0,
+    CONF_RESPIRATION_RATE_WAVE_1,
+    CONF_RESPIRATION_RATE_WAVE_2,
+    CONF_RESPIRATION_RATE_WAVE_3,
+    CONF_RESPIRATION_RATE_WAVE_4,
 ]
 
 # Configuration schema for individual sensors
@@ -53,7 +79,7 @@ TYPES = [
 CONFIG_SCHEMA = cv.Schema(
     {
         cv.GenerateID(CONF_ID): cv.use_id(
-            R60ABD1
+            R60ABD1Component
         ),  # Reference the main hub component ID
         cv.Optional(CONF_DISTANCE): sensor.sensor_schema(
             unit_of_measurement=UNIT_CENTIMETER,
@@ -118,6 +144,76 @@ CONFIG_SCHEMA = cv.Schema(
             device_class=DEVICE_CLASS_DISTANCE,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
+        cv.Optional(CONF_HEART_RATE_WAVE_0): sensor.sensor_schema(
+            unit_of_measurement=UNIT_EMPTY,
+            icon=ICON_HEART_PULSE,
+            accuracy_decimals=0,
+            device_class=DEVICE_CLASS_EMPTY,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_HEART_RATE_WAVE_1): sensor.sensor_schema(
+            unit_of_measurement=UNIT_EMPTY,
+            icon=ICON_HEART_PULSE,
+            accuracy_decimals=0,
+            device_class=DEVICE_CLASS_EMPTY,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_HEART_RATE_WAVE_2): sensor.sensor_schema(
+            unit_of_measurement=UNIT_EMPTY,
+            icon=ICON_HEART_PULSE,
+            accuracy_decimals=0,
+            device_class=DEVICE_CLASS_EMPTY,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_HEART_RATE_WAVE_3): sensor.sensor_schema(
+            unit_of_measurement=UNIT_EMPTY,
+            icon=ICON_HEART_PULSE,
+            accuracy_decimals=0,
+            device_class=DEVICE_CLASS_EMPTY,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_HEART_RATE_WAVE_4): sensor.sensor_schema(
+            unit_of_measurement=UNIT_EMPTY,
+            icon=ICON_HEART_PULSE,
+            accuracy_decimals=0,
+            device_class=DEVICE_CLASS_EMPTY,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_RESPIRATION_RATE_WAVE_0): sensor.sensor_schema(
+            unit_of_measurement=UNIT_EMPTY,
+            icon=ICON_LUNGS,
+            accuracy_decimals=0,
+            device_class=DEVICE_CLASS_EMPTY,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_RESPIRATION_RATE_WAVE_1): sensor.sensor_schema(
+            unit_of_measurement=UNIT_EMPTY,
+            icon=ICON_LUNGS,
+            accuracy_decimals=0,
+            device_class=DEVICE_CLASS_EMPTY,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_RESPIRATION_RATE_WAVE_2): sensor.sensor_schema(
+            unit_of_measurement=UNIT_EMPTY,
+            icon=ICON_LUNGS,
+            accuracy_decimals=0,
+            device_class=DEVICE_CLASS_EMPTY,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_RESPIRATION_RATE_WAVE_3): sensor.sensor_schema(
+            unit_of_measurement=UNIT_EMPTY,
+            icon=ICON_LUNGS,
+            accuracy_decimals=0,
+            device_class=DEVICE_CLASS_EMPTY,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_RESPIRATION_RATE_WAVE_4): sensor.sensor_schema(
+            unit_of_measurement=UNIT_EMPTY,
+            icon=ICON_LUNGS,
+            accuracy_decimals=0,
+            device_class=DEVICE_CLASS_EMPTY,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
     }
 )
 
@@ -151,3 +247,24 @@ async def to_code(config):
                 cg.add(hub.set_position_y_sensor(sens))
             elif key == CONF_POSITION_Z:
                 cg.add(hub.set_position_z_sensor(sens))
+            elif key == CONF_HEART_RATE_WAVE_0:
+                cg.add(hub.set_heart_rate_wave_0_sensor(sens))
+            elif key == CONF_HEART_RATE_WAVE_1:
+                cg.add(hub.set_heart_rate_wave_1_sensor(sens))
+            elif key == CONF_HEART_RATE_WAVE_2:
+                cg.add(hub.set_heart_rate_wave_2_sensor(sens))
+            elif key == CONF_HEART_RATE_WAVE_3:
+                cg.add(hub.set_heart_rate_wave_3_sensor(sens))
+            elif key == CONF_HEART_RATE_WAVE_4:
+                cg.add(hub.set_heart_rate_wave_4_sensor(sens))
+            elif key == CONF_RESPIRATION_RATE_WAVE_0:
+                cg.add(hub.set_respiration_rate_wave_0_sensor(sens))
+            elif key == CONF_RESPIRATION_RATE_WAVE_1:
+                cg.add(hub.set_respiration_rate_wave_1_sensor(sens))
+            elif key == CONF_RESPIRATION_RATE_WAVE_2:
+                cg.add(hub.set_respiration_rate_wave_2_sensor(sens))
+            elif key == CONF_RESPIRATION_RATE_WAVE_3:
+                cg.add(hub.set_respiration_rate_wave_3_sensor(sens))
+            elif key == CONF_RESPIRATION_RATE_WAVE_4:
+                cg.add(hub.set_respiration_rate_wave_4_sensor(sens))
+            # Add more elif statements for other sensor types as needed

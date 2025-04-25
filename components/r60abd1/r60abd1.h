@@ -2,9 +2,15 @@
 
 #include "esphome/core/component.h"
 #include "esphome/components/uart/uart.h"
+#ifdef USE_BINARY_SENSOR
 #include "esphome/components/binary_sensor/binary_sensor.h"
+#endif
+#ifdef USE_SENSOR
 #include "esphome/components/sensor/sensor.h"
+#endif
+#ifdef USE_TEXT_SENSOR
 #include "esphome/components/text_sensor/text_sensor.h"
+#endif
 
 #include <vector>
 
@@ -118,21 +124,40 @@ namespace esphome
       // --- Sensor Configuration Methods (called by generated code) ---
       void register_listener(R60ABD1Listener *listener) { this->listeners_.push_back(listener); }
 
-      // --- Sensor Configuration Methods (called by generated code from Python files) ---
-      void set_presence_sensor(binary_sensor::BinarySensor *sensor) { presence_sensor_ = sensor; }
-      void set_motion_sensor(sensor::Sensor *sensor) { motion_sensor_ = sensor; }
-      void set_motion_text_sensor(text_sensor::TextSensor *sensor) { motion_text_sensor_ = sensor; }
-      void set_distance_sensor(sensor::Sensor *sensor) { distance_sensor_ = sensor; }
-      void set_body_movement_sensor(sensor::Sensor *sensor) { body_movement_sensor_ = sensor; }
-      void set_heart_rate_sensor(sensor::Sensor *sensor) { heart_rate_sensor_ = sensor; }
-      void set_respiration_rate_sensor(sensor::Sensor *sensor) { respiration_rate_sensor_ = sensor; }
-      void set_respiration_info_sensor(text_sensor::TextSensor *sensor) { respiration_info_sensor_ = sensor; }
-      void set_bed_status_sensor(binary_sensor::BinarySensor *sensor) { bed_status_sensor_ = sensor; }
-      void set_sleep_stage_sensor(text_sensor::TextSensor *sensor) { sleep_stage_sensor_ = sensor; }
-      void set_sleep_score_sensor(sensor::Sensor *sensor) { sleep_score_sensor_ = sensor; }
-      void set_position_x_sensor(sensor::Sensor *sensor) { position_x_sensor_ = sensor; }
-      void set_position_y_sensor(sensor::Sensor *sensor) { position_y_sensor_ = sensor; }
-      void set_position_z_sensor(sensor::Sensor *sensor) { position_z_sensor_ = sensor; }
+      #ifdef USE_BINARY_SENSOR
+      SUB_BINARY_SENSOR(presence);
+      SUB_BINARY_SENSOR(bed_status);
+      #endif
+
+      #ifdef USE_TEXT_SENSOR
+      SUB_TEXT_SENSOR(respiration_info);
+      SUB_TEXT_SENSOR(motion_text);
+      SUB_TEXT_SENSOR(sleep_stage);
+      SUB_TEXT_SENSOR(firmware_version);
+      SUB_TEXT_SENSOR(sleep_rating);
+      #endif
+      
+      #ifdef USE_SENSOR
+      SUB_SENSOR(motion);
+      SUB_SENSOR(distance);
+      SUB_SENSOR(body_movement);
+      SUB_SENSOR(heart_rate);
+      SUB_SENSOR(respiration_rate);
+      SUB_SENSOR(sleep_score);
+      SUB_SENSOR(position_x);
+      SUB_SENSOR(position_y);
+      SUB_SENSOR(position_z);
+      SUB_SENSOR(heart_rate_wave_0);
+      SUB_SENSOR(heart_rate_wave_1);
+      SUB_SENSOR(heart_rate_wave_2);
+      SUB_SENSOR(heart_rate_wave_3);
+      SUB_SENSOR(heart_rate_wave_4);
+      SUB_SENSOR(respiration_rate_wave_0);
+      SUB_SENSOR(respiration_rate_wave_1);
+      SUB_SENSOR(respiration_rate_wave_2);
+      SUB_SENSOR(respiration_rate_wave_3);
+      SUB_SENSOR(respiration_rate_wave_4);
+      #endif
 
       // --- Component Overrides ---
       void setup() override;
@@ -163,36 +188,6 @@ namespace esphome
       void process_frame_(const std::vector<uint8_t> &frame);
       uint8_t calculate_checksum_(const uint8_t *buffer, size_t length); // Checksum for sending buffer
       int16_t decode_16bit_signed_(uint8_t msb, uint8_t lsb);            // Decode signed position data
-
-      // --- Sensor Pointers ---
-      // Keep these as before, they will be set by the generated code via the public setters
-      binary_sensor::BinarySensor *presence_sensor_{nullptr};
-      sensor::Sensor *motion_sensor_{nullptr}; // 0:无, 1:静止, 2:活跃
-      text_sensor::TextSensor *motion_text_sensor_{nullptr};
-      sensor::Sensor *body_movement_sensor_{nullptr}; // 0-100
-      sensor::Sensor *distance_sensor_{nullptr}; // cm
-      sensor::Sensor *position_x_sensor_{nullptr}; // cm
-      sensor::Sensor *position_y_sensor_{nullptr}; // cm
-      sensor::Sensor *position_z_sensor_{nullptr}; // cm
-
-      sensor::Sensor *heart_rate_sensor_{nullptr}; // bpm
-      sensor::Sensor *heart_rate_wave_0_sensor_{nullptr}; // 0-255
-      sensor::Sensor *heart_rate_wave_1_sensor_{nullptr}; // 0-255
-      sensor::Sensor *heart_rate_wave_2_sensor_{nullptr}; // 0-255
-      sensor::Sensor *heart_rate_wave_3_sensor_{nullptr}; // 0-255
-      sensor::Sensor *heart_rate_wave_4_sensor_{nullptr}; // 0-255
-
-      text_sensor::TextSensor *respiration_info_sensor_{nullptr}; // 正常, 过高, 过低, 无
-      sensor::Sensor *respiration_rate_sensor_{nullptr}; // rpm
-      sensor::Sensor *respiration_rate_wave_0_sensor_{nullptr}; // 0-255
-      sensor::Sensor *respiration_rate_wave_1_sensor_{nullptr}; // 0-255
-      sensor::Sensor *respiration_rate_wave_2_sensor_{nullptr}; // 0-255
-      sensor::Sensor *respiration_rate_wave_3_sensor_{nullptr}; // 0-255
-      sensor::Sensor *respiration_rate_wave_4_sensor_{nullptr}; // 0-255
-
-      binary_sensor::BinarySensor *bed_status_sensor_{nullptr}; // true: 入床, false: 离床
-      text_sensor::TextSensor *sleep_stage_sensor_{nullptr}; // 深睡, 浅睡, 清醒, 无
-      text_sensor::TextSensor *firmware_version_sensor_{nullptr}; // 固件版本字符串
 
       // --- Internal State ---
       std::vector<uint8_t> buffer_;

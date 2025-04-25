@@ -10,12 +10,14 @@ from esphome.const import (
 )
 
 # Import the namespace and hub class from __init__.py
-from . import r60abd1_ns, R60ABD1
+from . import r60abd1_ns, R60ABD1Component
 
 # Define keys for YAML configuration
 CONF_MOTION_TEXT = "motion_text"
 CONF_RESPIRATION_INFO = "respiration_info"
 CONF_SLEEP_STAGE = "sleep_stage"
+CONF_SLEEP_RATING = "sleep_rating"
+CONF_FIRMWEAR_VERSION = "firmwear_version"
 
 # Define text sensor types
 TYPES = [
@@ -27,7 +29,7 @@ TYPES = [
 # Configuration schema for individual text sensors
 CONFIG_SCHEMA = cv.Schema(
     {
-        cv.GenerateID(CONF_ID): cv.use_id(R60ABD1),  # Reference the hub
+        cv.GenerateID(CONF_ID): cv.use_id(R60ABD1Component),  # Reference the hub
         cv.Optional(CONF_MOTION_TEXT): text_sensor.text_sensor_schema(
             icon=ICON_MOTION_SENSOR  # Or mdi:walk
         ),
@@ -35,6 +37,8 @@ CONFIG_SCHEMA = cv.Schema(
             icon=ICON_INFORMATION_OUTLINE  # Or ICON_LUNGS
         ),
         cv.Optional(CONF_SLEEP_STAGE): text_sensor.text_sensor_schema(icon=ICON_SLEEP),
+        cv.Optional(CONF_SLEEP_RATING): text_sensor.text_sensor_schema(icon=ICON_SLEEP),
+        cv.Optional(CONF_FIRMWEAR_VERSION): text_sensor.text_sensor_schema(icon=ICON_SLEEP),
     }
 )
 
@@ -53,3 +57,7 @@ async def to_code(config):
                 cg.add(hub.set_respiration_info_sensor(sens))
             elif key == CONF_SLEEP_STAGE:
                 cg.add(hub.set_sleep_stage_sensor(sens))
+            elif key == CONF_SLEEP_RATING:
+                cg.add(hub.set_sleep_rating_sensor(sens))
+            elif key == CONF_FIRMWEAR_VERSION:
+                cg.add(hub.set_firmwear_version_sensor(sens))

@@ -15,24 +15,19 @@ namespace esphome
       this->buffer_.reserve(MAX_FRAME_LENGTH); // Pre-allocate buffer
 
       // Query firmware version after a delay (e.g., 5 seconds) to allow radar initialization
-      this->set_timeout("firmware_query", 5000, [this]()
+      this->set_timeout("initial_query", 5000, [this]()
                         {
-        ESP_LOGD(TAG, "Querying firmware version...");
+        ESP_LOGD(TAG, "Querying initial states...");
         // Command: Query Firmware Version (Control=0x02, Command=0xA4, Data=0x0F)
         this->send_command(CTRL_PRODUCT_INFO, CMD_FIRMWARE_VERSION_QUERY, {0x0F}); });
-
-      // Optional: Query other initial states after a slightly longer delay
-      // this->set_timeout("initial_state_query", 6000, [this]() {
-      //   ESP_LOGD(TAG, "Querying initial states...");
-      //   this->send_command(CTRL_PRESENCE, CMD_PRESENCE_SWITCH_QUERY, {0x0F}); // Query presence detection status
-      //   this->send_command(CTRL_HEART_RATE, CMD_HEART_RATE_SWITCH_QUERY, {0x0F}); // Query HR detection status
-      //   this->send_command(CTRL_RESPIRATION, CMD_RESPIRATION_SWITCH_QUERY, {0x0F}); // Query Resp detection status
-      //   this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_SWITCH_QUERY, {0x0F}); // Query Sleep monitoring status
-      //   // Query other settings like thresholds if needed
-      //   this->send_command(CTRL_RESPIRATION, CMD_RESPIRATION_LOW_THRESHOLD_QUERY, {0x0F});
-      //   this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_UNATTENDED_TIME_QUERY, {0x0F});
-      //   this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_STRUGGLE_SENSITIVITY_QUERY, {0x0F});
-      // });
+        this->send_command(CTRL_PRESENCE, CMD_PRESENCE_SWITCH_QUERY, {0x0F}); // Query presence detection status
+        this->send_command(CTRL_HEART_RATE, CMD_HEART_RATE_SWITCH_QUERY, {0x0F}); // Query HR detection status
+        this->send_command(CTRL_RESPIRATION, CMD_RESPIRATION_SWITCH_QUERY, {0x0F}); // Query Resp detection status
+        this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_SWITCH_QUERY, {0x0F}); // Query Sleep monitoring status
+        // Query other settings like thresholds if needed
+        this->send_command(CTRL_RESPIRATION, CMD_RESPIRATION_LOW_THRESHOLD_QUERY, {0x0F});
+        this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_UNATTENDED_TIME_QUERY, {0x0F});
+        this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_STRUGGLE_SENSITIVITY_QUERY, {0x0F});
     }
 
     void R60ABD1::loop()
@@ -49,34 +44,40 @@ namespace esphome
     {
       ESP_LOGCONFIG(TAG, " R60ABD1:");
       LOG_UART_DEVICE(this);
-      // Log sensors linked via Python config generation
+
+      #ifdef USE_BINARY_SENSOR
       LOG_BINARY_SENSOR("  ", "Presence Sensor", this->presence_sensor_);
-      LOG_TEXT_SENSOR("  ", "Motion Text Sensor", this->motion_text_sensor_);
+      LOG_BINARY_SENSOR("  ", "Bed Status Sensor", this->bed_status_sensor_);
+      #endif
+
+      #ifdef USE_SENSOR
       LOG_SENSOR("  ", "Motion Sensor", this->motion_sensor_);
       LOG_SENSOR("  ", "Body Movement Sensor", this->body_movement_sensor_);
       LOG_SENSOR("  ", "Distance Sensor", this->distance_sensor_);
       LOG_SENSOR("  ", "Position X Sensor", this->position_x_sensor_);
       LOG_SENSOR("  ", "Position Y Sensor", this->position_y_sensor_);
       LOG_SENSOR("  ", "Position Z Sensor", this->position_z_sensor_);
-
       LOG_SENSOR("  ", "Heart Rate Sensor", this->heart_rate_sensor_);
       LOG_SENSOR("  ", "Heart Rate Wave 0 Sensor", this->heart_rate_wave_0_sensor_);
       LOG_SENSOR("  ", "Heart Rate Wave 1 Sensor", this->heart_rate_wave_1_sensor_);
       LOG_SENSOR("  ", "Heart Rate Wave 2 Sensor", this->heart_rate_wave_2_sensor_);
       LOG_SENSOR("  ", "Heart Rate Wave 3 Sensor", this->heart_rate_wave_3_sensor_);
       LOG_SENSOR("  ", "Heart Rate Wave 4 Sensor", this->heart_rate_wave_4_sensor_);
-
-      LOG_TEXT_SENSOR("  ", "Respiration Info Sensor", this->respiration_info_sensor_);
       LOG_SENSOR("  ", "Respiration Rate Sensor", this->respiration_rate_sensor_);
       LOG_SENSOR("  ", "Respiration Rate Wave 0 Sensor", this->respiration_rate_wave_0_sensor_);
       LOG_SENSOR("  ", "Respiration Rate Wave 1 Sensor", this->respiration_rate_wave_1_sensor_);
       LOG_SENSOR("  ", "Respiration Rate Wave 2 Sensor", this->respiration_rate_wave_2_sensor_);
       LOG_SENSOR("  ", "Respiration Rate Wave 3 Sensor", this->respiration_rate_wave_3_sensor_);
       LOG_SENSOR("  ", "Respiration Rate Wave 4 Sensor", this->respiration_rate_wave_4_sensor_);
+      #endif
 
-      LOG_BINARY_SENSOR("  ", "Bed Status Sensor", this->bed_status_sensor_);
+      #ifdef USE_TEXT_SENSOR
+      LOG_TEXT_SENSOR("  ", "Respiration Info Sensor", this->respiration_info_sensor_);
+      LOG_TEXT_SENSOR("  ", "Motion Text Sensor", this->motion_text_sensor_);
       LOG_TEXT_SENSOR("  ", "Sleep Stage Sensor", this->sleep_stage_sensor_);
       LOG_TEXT_SENSOR("  ", "Firmware Version Sensor", this->firmware_version_sensor_);
+      LOG_TEXT_SENSOR("  ", "Sleep Rating Sensor", this->sleep_rating_sensor_);
+      #endif
     }
 
     // Checksum calculation for SENDING commands
@@ -455,7 +456,7 @@ namespace esphome
         // Ignore waveform data (0x05) for now
         case CMD_HEART_RATE_WAVE_REPORT: // 0x05
           ESP_LOGV(TAG, "Heart rate waveform data received (ignored).");
-          if (length == 6)
+          if (length == 5)
           {
             ESP_LOGD(TAG, "Heart rate waveform report: %02X %02X %02X %02X %02X",
                      data[0], data[1], data[2], data[3], data[4]);
@@ -555,7 +556,7 @@ namespace esphome
         // Ignore waveform data (0x05) for now
         case CMD_RESPIRATION_WAVE_REPORT: // 0x05
           ESP_LOGV(TAG, "Respiration waveform data received (ignored).");
-          if (length == 6)
+          if (length == 5)
           {
             ESP_LOGD(TAG, "Respiration waveform report: %02X %02X %02X %02X %02X",
                      data[0], data[1], data[2], data[3], data[4]);

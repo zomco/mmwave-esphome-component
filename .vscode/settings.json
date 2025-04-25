@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "vector": "c",
-        "cstdint": "c"
+        "cstdint": "c",
+        "xutility": "c"
     }
 }
