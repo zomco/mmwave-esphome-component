@@ -4,7 +4,7 @@ from esphome.components import uart
 from esphome.const import CONF_ID
 
 # Declare the namespace for our C++ code
-CODEOWNERS = ["@owkor"]  # Optional: Add your GitHub username
+CODEOWNERS = ["@zomco"]  # Optional: Add your GitHub username
 DEPENDENCIES = ["uart"]  # This component requires UART
 MULTI_CONF = True  # Allow multiple instances of this component
 

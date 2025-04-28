@@ -16,158 +16,194 @@ R60ABD1 does not have wireless communication capabilities, so if you want R60ABD
 In this guide, we provide an example.yaml file that can be directly imported into HomeAssistant:
 
 ```yaml
+
+esphome:
+  name: mmwave
+  friendly_name: mmwave
+  # Automatically add the mac address to the name
+  # so you can use a single firmware for all devices
+  name_add_mac_suffix: true
+    # This will allow for project identification,
+  # configuration and updates.
+  project:
+    name: zomco.mmwave
+    version: dev # This will be replaced by the github workflows with the `release` version
+
+# To be able to get logs from the device via serial and api.
+logger:
+
+# API is a requirement of the dashboard import.
+api:
+
+# OTA is required for Over-the-Air updating
+ota:
+  - platform: esphome
+
+wifi:
+  # Set up a wifi access point using the device name above
+  ap:
+
+# In combination with the `ap` this allows the user
+# to provision wifi credentials to the device.
+captive_portal:
+
+# Sets up Bluetooth LE (Only on ESP32) to allow the user
+# to provision wifi credentials to the device.
+esp32_improv:
+  authorizer: none
+
+# Sets up the improv via serial client for Wi-Fi provisioning.
+# Handy if your device has a usb port for the user to add credentials when they first get it.
+improv_serial:
+
+# This should point to the public location of the yaml file that will be adopted.
+# In this case it is the core yaml file that does not contain the extra things
+# that are provided by this factory yaml file as the user does not need these once adopted.
+dashboard_import:
+  package_import_url: github://zomco/mmwave-esphome-component/mmwave-common.yaml@main
+  
 external_components:
   # Include the r60abd1 component
-  # - source: https://github.com/zomco/mmwave-esphome-component
-  - source: ../../components
+  - source: https://github.com/zomco/mmwave-esphome-component
     component: r60abd1
-
-packages:
-  # Include all of the core configuration
-  core: !include ../common.yaml
 
 esp32:
   board: esp32-s3-devkitc-1
   framework:
     type: esp-idf
 
-esphome:
-  name: r60abd1
-  friendly_name: r60abd1
-  # This will allow for project identification,
-  # configuration and updates.
-  project:
-    name: r60abd1-s3
-    version: dev # This will be replaced by the github workflows with the `release` version
-
-# This should point to the public location of the yaml file that will be adopted.
-# In this case it is the core yaml file that does not contain the extra things
-# that are provided by this factory yaml file as the user does not need these once adopted.
-dashboard_import:
-  package_import_url: github://zomco/mmwave-esphome-component/r60abd1-s3.yaml@main
-
-
 # Configure the UART bus
-# 配置用于连接雷达的 UART 总线
 uart:
-  id: uart_bus # UART 总线的 ID
-  tx_pin: GPIO13 # 根据您的 ESP 连接到雷达 RX 的引脚进行调整
-  rx_pin: GPIO14 # 根据您的 ESP 连接到雷达 TX 的引脚进行调整
-  baud_rate: 115200 # 波特率，根据雷达协议文档设置
+  id: uart_bus
+  tx_pin: GPIO13
+  rx_pin: GPIO14
+  baud_rate: 115200
 
 # Configure the component hub
-# 配置 MicRadar 组件核心
-micradar_r60abd1:
-  id: radar_hub # 组件核心的 ID
-  uart_id: uart_bus # 将其链接到上面定义的 UART 总线
+r60abd1:
+  id: radar_hub
+  uart_id: uart_bus
 
 # Configure Sensors
-# 配置传感器 (数值型)
 sensor:
-  - platform: r60abd1 # 平台名称与组件文件夹名称匹配
-    id: radar_hub # 将每个传感器链接到核心组件 ID
+  - platform: r60abd1 
+    id: radar_hub 
     distance:
-      name: "毫米波雷达 人体距离" # Home Assistant 中显示的名称
+      name: "Distance" # Home Assistant 中显示的名称
       # unit_of_measurement, icon 等在 sensor.py 中定义
       # 如果需要，可以在此处覆盖它们，例如：
       # icon: "mdi:map-marker-radius"
     motion_state:
-      name: "毫米波雷达 运动状态码" # 0:无, 1:静止, 2:活跃
+      name: "Motion State" # 0:无, 1:静止, 2:活跃
     body_movement:
-      name: "毫米波雷达 体动幅度" # 0-100
+      name: "Body Movement" # 0-100
     heart_rate:
-      name: "毫米波雷达 心率" # bpm
-      # 可选：应用过滤器以排除不合理的值
+      name: "Heart Rate" # bpm
       filters:
         - range:
             min: 30.0
             max: 200.0
     respiration_rate:
-      name: "毫米波雷达 呼吸率" # rpm
-      # 可选：应用过滤器
+      name: "Respiration Rate" # rpm
       filters:
         - range:
             min: 1.0
             max: 50.0
     sleep_score:
-      name: "毫米波雷达 睡眠评分" # 0-100
+      name: "Sleep Score" # 0-100
     position_x:
-      name: "毫米波雷达 位置 X" # cm
+      name: "Position X" # cm
     position_y:
-      name: "毫米波雷达 位置 Y" # cm
+      name: "Position Y" # cm
     position_z:
-      name: "毫米波雷达 位置 Z" # cm
+      name: "Position Z" # cm
+    heart_rate_wave_0:
+      name: "Heart Rate Wave 0" # 心率波形数据
+    heart_rate_wave_1:
+      name: "Heart Rate Wave 1" # 心率波形数据
+    heart_rate_wave_2:
+      name: "Heart Rate Wave 2" # 心率波形数据
+    heart_rate_wave_3:
+      name: "Heart Rate Wave 3" # 心率波形数据
+    heart_rate_wave_4:
+      name: "Heart Rate Wave 4" # 心率波形数据
+    respiration_wave_0:
+      name: "Respiration Wave 0" # 呼吸波形数据
+    respiration_wave_1:
+      name: "Respiration Wave 1" # 呼吸波形数据
+    respiration_wave_2:
+      name: "Respiration Wave 2" # 呼吸波形数据
+    respiration_wave_3:
+      name: "Respiration Wave 3" # 呼吸波形数据
+    respiration_wave_4:
+      name: "Respiration Wave 4" # 呼吸波形数据
 
 # Configure Binary Sensors
-# 配置二进制传感器 (开关型)
 binary_sensor:
-  - platform: micradar_r60abd1
+  - platform: r60abd1
     id: radar_hub # 链接到核心
     presence:
-      name: "毫米波雷达 人体存在" # true: 有人, false: 无人
+      name: "Presence" # true: 有人, false: 无人
     bed_status:
-      name: "毫米波雷达 在床状态" # true: 在床, false: 离床
+      name: "Bed Status" # true: 在床, false: 离床
 
 # Configure Text Sensors
-# 配置文本传感器
 text_sensor:
-  - platform: micradar_r60abd1
+  - platform: r60abd1
     id: radar_hub # 链接到核心
     motion_text:
-      name: "毫米波雷达 运动状态" # 无, 静止, 活跃
+      name: "Motion Text" # 无, 静止, 活跃
     respiration_info:
-      name: "毫米波雷达 呼吸信息" # 正常, 过高, 过低, 无
+      name: "Respiration Info" # 正常, 过高, 过低, 无
     sleep_stage:
-      name: "毫米波雷达 睡眠阶段" # 深睡, 浅睡, 清醒, 无
+      name: "Sleep Stage" # 深睡, 浅睡, 清醒, 无
     firmware_version:
-      name: "毫米波雷达 固件版本" # 显示雷达的固件版本号
+      name: "Firmware Version" # 显示雷达的固件版本号
+    sleep_rating:
+      name: "Sleep Rating" # 显示睡眠评分
 
 # --- Configure Control Entities ---
-# --- 配置控制实体 ---
 
 # Configure Switches
-# 配置开关
 switch:
-  - platform: micradar_r60abd1
+  - platform: r60abd1
     id: radar_hub # 链接到核心
     presence_detection: # 对应 switch.py 中的 key
-      name: "雷达 人体存在检测开关"
+      name: "Presence Detection" # 设置是否启用 Presence Detection
     heart_rate_detection:
-      name: "雷达 心率检测开关"
+      name: "Heart Rate Detection" # 设置是否启用 Heart Rate Detection
     respiration_detection:
-      name: "雷达 呼吸检测开关"
+      name: "Respiration Detection" # 设置是否启用 Respiration Detection
     sleep_monitoring:
-      name: "雷达 睡眠监测开关"
+      name: "Sleep Monitoring" # 设置是否启用 Sleep Monitoring
     heart_rate_waveform:
-      name: "雷达 心率波形上报开关"
+      name: "Heart Rate Waveform" # 设置是否启用 Heart Rate Waveform
     respiration_waveform:
-      name: "雷达 呼吸波形上报开关"
+      name: "Respiration Waveform" # 设置是否启用 Respiration Waveform
     struggle_detection:
-      name: "雷达 异常挣扎检测开关"
+      name: "Struggle Detection" # 设置是否启用 Struggle Detection
     unattended_detection:
-      name: "雷达 无人计时功能开关"
+      name: "Unattended Detection" # 设置是否启用 Unattended Detection
 
 # Configure Numbers
-# 配置数字输入
 number:
-  - platform: micradar_r60abd1
+  - platform: r60abd1
     id: radar_hub # 链接到核心
     respiration_low_threshold: # 对应 number.py 中的 key
-      name: "雷达 呼吸过低阈值" # 设置呼吸率低于多少时报告“过低”
+      name: "Respiration Low Threshold" # 设置呼吸率低于多少时报告“过低”
       # min/max/step 在 number.py 中定义 (10-20 rpm, step 1)
     unattended_time:
-      name: "雷达 无人计时时长" # 设置无人多久后触发“无人计时异常”
+      name: "Unattended Time" # 设置无人多久后触发“无人计时异常”
       # min/max/step 在 number.py 中定义 (30-180 min, step 10)
     sleep_end_time:
-      name: "雷达 睡眠截止时长" # 设置离床多久后判断睡眠结束
+      name: "Sleep End Time" # 设置离床多久后判断睡眠结束
       # min/max/step 在 number.py 中定义 (5-120 min, step 1)
 
 # Configure Selects
-# 配置选择框
 select:
-  - platform: micradar_r60abd1
+  - platform: r60abd1
     id: radar_hub # 链接到核心
     struggle_sensitivity: # 对应 select.py 中的 key
-      name: "雷达 挣扎检测灵敏度" # 设置异常挣扎检测的灵敏度
+      name: "Stuggle Sensitivity" # 设置异常挣扎检测的灵敏度
       # options 在 select.py 中定义 (Low, Medium, High)
 ```
