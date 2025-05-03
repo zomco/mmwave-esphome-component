@@ -13,6 +13,8 @@ r60abd1_ns = cg.esphome_ns.namespace("r60abd1")
 # Get the C++ class defined in the .h file
 R60ABD1Component = r60abd1_ns.class_("R60ABD1Component", cg.Component, uart.UARTDevice)
 
+CONF_R60ABD1_ID = "r60abd1_id"
+
 # Define the basic configuration schema for the component hub
 CONFIG_SCHEMA = cv.Schema(
     {

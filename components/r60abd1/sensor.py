@@ -2,23 +2,12 @@ import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import sensor
 from esphome.const import (
-    CONF_ID,
-    CONF_DISTANCE,
-    CONF_HEART_RATE,
-    CONF_POSITION_X,
-    CONF_POSITION_Y,
-    CONF_POSITION_Z,
     DEVICE_CLASS_DISTANCE,
     DEVICE_CLASS_EMPTY,  # Use empty for things like 'score' or 'count'
     DEVICE_CLASS_SPEED,  # Use for respiration rate (breaths/min)
     ICON_HEART_PULSE,
     ICON_MOTION_SENSOR,
     ICON_RULER,
-    ICON_SCOREBOARD,  # For sleep score
-    ICON_LUNGS,
-    ICON_AXIS_X_ARROW,
-    ICON_AXIS_Y_ARROW,
-    ICON_AXIS_Z_ARROW,
     STATE_CLASS_MEASUREMENT,
     UNIT_CENTIMETER,
     UNIT_BEATS_PER_MINUTE,
@@ -27,7 +16,7 @@ from esphome.const import (
 )
 
 # Import the namespace and hub class from __init__.py
-from . import r60abd1_ns, R60ABD1Component
+from . import r60abd1_ns, R60ABD1Component, CONF_R60ABD1_ID
 
 # Define keys for YAML configuration specific to this component's sensors
 CONF_DISTANCE = "distance"
@@ -50,35 +39,18 @@ CONF_RESPIRATION_RATE_WAVE_2 = "respiration_rate_wave_2"
 CONF_RESPIRATION_RATE_WAVE_3 = "respiration_rate_wave_3"
 CONF_RESPIRATION_RATE_WAVE_4 = "respiration_rate_wave_4"
 
+ICON_SCOREBOARD = "mdi:scoreboard"
+ICON_LUNGS = "mdi:lungs"
+ICON_AXIS_X_ARROW = "mdi:axis-x-arrow"
+ICON_AXIS_Y_ARROW = "mdi:axis-y-arrow"
+ICON_AXIS_Z_ARROW = "mdi:axis-z-arrow"
 
-# Define sensor types provided by this component
-TYPES = [
-    CONF_DISTANCE,
-    CONF_HEART_RATE,
-    CONF_MOTION_STATE,
-    CONF_BODY_MOVEMENT,
-    CONF_RESPIRATION_RATE,
-    CONF_SLEEP_SCORE,
-    CONF_POSITION_X,
-    CONF_POSITION_Y,
-    CONF_POSITION_Z,
-    CONF_HEART_RATE_WAVE_0,
-    CONF_HEART_RATE_WAVE_1,
-    CONF_HEART_RATE_WAVE_2,
-    CONF_HEART_RATE_WAVE_3,
-    CONF_HEART_RATE_WAVE_4,
-    CONF_RESPIRATION_RATE_WAVE_0,
-    CONF_RESPIRATION_RATE_WAVE_1,
-    CONF_RESPIRATION_RATE_WAVE_2,
-    CONF_RESPIRATION_RATE_WAVE_3,
-    CONF_RESPIRATION_RATE_WAVE_4,
-]
 
 # Configuration schema for individual sensors
 # Users will define sensors under the 'sensor:' platform in their YAML
 CONFIG_SCHEMA = cv.Schema(
     {
-        cv.GenerateID(CONF_ID): cv.use_id(
+        cv.GenerateID(CONF_R60ABD1_ID): cv.use_id(
             R60ABD1Component
         ),  # Reference the main hub component ID
         cv.Optional(CONF_DISTANCE): sensor.sensor_schema(
@@ -220,51 +192,81 @@ CONFIG_SCHEMA = cv.Schema(
 
 # Function to generate C++ code for sensor setup
 async def to_code(config):
-    hub = await cg.get_variable(config[CONF_ID])  # Get the hub instance
+    r60abd1_component = await cg.get_variable(config[CONF_R60ABD1_ID])  # Get the hub instance
 
-    # Loop through defined sensor types and register them with the hub
-    for key in TYPES:
-        if key in config:
-            conf = config[key]
-            # Create a new sensor object
-            sens = await sensor.new_sensor(conf)
-            # Call the corresponding setter method on the C++ hub object
-            if key == CONF_DISTANCE:
-                cg.add(hub.set_distance_sensor(sens))
-            elif key == CONF_MOTION_STATE:
-                cg.add(hub.set_motion_sensor(sens))
-            elif key == CONF_BODY_MOVEMENT:
-                cg.add(hub.set_body_movement_sensor(sens))
-            elif key == CONF_HEART_RATE:
-                cg.add(hub.set_heart_rate_sensor(sens))
-            elif key == CONF_RESPIRATION_RATE:
-                cg.add(hub.set_respiration_rate_sensor(sens))
-            elif key == CONF_SLEEP_SCORE:
-                cg.add(hub.set_sleep_score_sensor(sens))
-            elif key == CONF_POSITION_X:
-                cg.add(hub.set_position_x_sensor(sens))
-            elif key == CONF_POSITION_Y:
-                cg.add(hub.set_position_y_sensor(sens))
-            elif key == CONF_POSITION_Z:
-                cg.add(hub.set_position_z_sensor(sens))
-            elif key == CONF_HEART_RATE_WAVE_0:
-                cg.add(hub.set_heart_rate_wave_0_sensor(sens))
-            elif key == CONF_HEART_RATE_WAVE_1:
-                cg.add(hub.set_heart_rate_wave_1_sensor(sens))
-            elif key == CONF_HEART_RATE_WAVE_2:
-                cg.add(hub.set_heart_rate_wave_2_sensor(sens))
-            elif key == CONF_HEART_RATE_WAVE_3:
-                cg.add(hub.set_heart_rate_wave_3_sensor(sens))
-            elif key == CONF_HEART_RATE_WAVE_4:
-                cg.add(hub.set_heart_rate_wave_4_sensor(sens))
-            elif key == CONF_RESPIRATION_RATE_WAVE_0:
-                cg.add(hub.set_respiration_rate_wave_0_sensor(sens))
-            elif key == CONF_RESPIRATION_RATE_WAVE_1:
-                cg.add(hub.set_respiration_rate_wave_1_sensor(sens))
-            elif key == CONF_RESPIRATION_RATE_WAVE_2:
-                cg.add(hub.set_respiration_rate_wave_2_sensor(sens))
-            elif key == CONF_RESPIRATION_RATE_WAVE_3:
-                cg.add(hub.set_respiration_rate_wave_3_sensor(sens))
-            elif key == CONF_RESPIRATION_RATE_WAVE_4:
-                cg.add(hub.set_respiration_rate_wave_4_sensor(sens))
-            # Add more elif statements for other sensor types as needed
+    if distance := config.get(CONF_DISTANCE):
+        sens = await sensor.new_sensor(distance)
+        cg.add(r60abd1_component.set_distance_sensor(sens))
+
+    if motion_state := config.get(CONF_MOTION_STATE):
+        sens = await sensor.new_sensor(motion_state)
+        cg.add(r60abd1_component.set_motion_state_sensor(sens))
+
+    if body_movement := config.get(CONF_BODY_MOVEMENT):
+        sens = await sensor.new_sensor(body_movement)
+        cg.add(r60abd1_component.set_body_movement_sensor(sens))
+
+    if heart_rate := config.get(CONF_HEART_RATE):
+        sens = await sensor.new_sensor(heart_rate)
+        cg.add(r60abd1_component.set_heart_rate_sensor(sens))
+
+    if respiration_rate := config.get(CONF_RESPIRATION_RATE):
+        sens = await sensor.new_sensor(respiration_rate)
+        cg.add(r60abd1_component.set_respiration_rate_sensor(sens))
+
+    if sleep_score := config.get(CONF_SLEEP_SCORE):
+        sens = await sensor.new_sensor(sleep_score)
+        cg.add(r60abd1_component.set_sleep_score_sensor(sens))
+
+    if position_x := config.get(CONF_POSITION_X):
+        sens = await sensor.new_sensor(position_x)
+        cg.add(r60abd1_component.set_position_x_sensor(sens))
+
+    if position_y := config.get(CONF_POSITION_Y):
+        sens = await sensor.new_sensor(position_y)
+        cg.add(r60abd1_component.set_position_y_sensor(sens))
+
+    if position_z := config.get(CONF_POSITION_Z):
+        sens = await sensor.new_sensor(position_z)
+        cg.add(r60abd1_component.set_position_z_sensor(sens))
+
+    if heart_rate_wave_0 := config.get(CONF_HEART_RATE_WAVE_0):
+        sens = await sensor.new_sensor(heart_rate_wave_0)
+        cg.add(r60abd1_component.set_heart_rate_wave_0_sensor(sens))
+
+    if heart_rate_wave_1 := config.get(CONF_HEART_RATE_WAVE_1):
+        sens = await sensor.new_sensor(heart_rate_wave_1)
+        cg.add(r60abd1_component.set_heart_rate_wave_1_sensor(sens))
+
+    if heart_rate_wave_2 := config.get(CONF_HEART_RATE_WAVE_2):
+        sens = await sensor.new_sensor(heart_rate_wave_2)
+        cg.add(r60abd1_component.set_heart_rate_wave_2_sensor(sens))
+
+    if heart_rate_wave_3 := config.get(CONF_HEART_RATE_WAVE_3):
+        sens = await sensor.new_sensor(heart_rate_wave_3)
+        cg.add(r60abd1_component.set_heart_rate_wave_3_sensor(sens))
+
+    if heart_rate_wave_4 := config.get(CONF_HEART_RATE_WAVE_4):
+        sens = await sensor.new_sensor(heart_rate_wave_4)
+        cg.add(r60abd1_component.set_heart_rate_wave_4_sensor(sens))
+
+    if respiration_rate_wave_0 := config.get(CONF_RESPIRATION_RATE_WAVE_0):
+        sens = await sensor.new_sensor(respiration_rate_wave_0)
+        cg.add(r60abd1_component.set_respiration_rate_wave_0_sensor(sens))
+
+    if respiration_rate_wave_1 := config.get(CONF_RESPIRATION_RATE_WAVE_1):
+        sens = await sensor.new_sensor(respiration_rate_wave_1)
+        cg.add(r60abd1_component.set_respiration_rate_wave_1_sensor(sens))
+
+    if respiration_rate_wave_2 := config.get(CONF_RESPIRATION_RATE_WAVE_2):
+        sens = await sensor.new_sensor(respiration_rate_wave_2)
+        cg.add(r60abd1_component.set_respiration_rate_wave_2_sensor(sens))
+
+    if respiration_rate_wave_3 := config.get(CONF_RESPIRATION_RATE_WAVE_3):
+        sens = await sensor.new_sensor(respiration_rate_wave_3)
+        cg.add(r60abd1_component.set_respiration_rate_wave_3_sensor(sens))
+
+    if respiration_rate_wave_4 := config.get(CONF_RESPIRATION_RATE_WAVE_4):
+        sens = await sensor.new_sensor(respiration_rate_wave_4)
+        cg.add(r60abd1_component.set_respiration_rate_wave_4_sensor(sens))
+
