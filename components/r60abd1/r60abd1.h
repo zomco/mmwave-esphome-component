@@ -1,7 +1,7 @@
 #pragma once
 
+#include "esphome/core/defines.h"
 #include "esphome/core/component.h"
-#include "esphome/components/uart/uart.h"
 #ifdef USE_BINARY_SENSOR
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #endif
@@ -11,7 +11,9 @@
 #ifdef USE_TEXT_SENSOR
 #include "esphome/components/text_sensor/text_sensor.h"
 #endif
-
+#include "esphome/components/uart/uart.h"
+#include "esphome/core/automation.h"
+#include "esphome/core/helpers.h"
 #include <vector>
 
 namespace esphome
@@ -114,15 +116,11 @@ namespace esphome
     const uint8_t CMD_SLEEP_END_TIME_QUERY = 0x96;             // 查询睡眠截止时间
     const uint8_t CMD_SLEEP_STRUGGLE_SENSITIVITY_QUERY = 0x9A; // 查询挣扎状态判读
 
-    // Forward declaration
-    class R60ABD1;
 
     // Main Hub Component
-    class R60ABD1 : public Component, public uart::UARTDevice
+    class R60ABD1Component : public Component, public uart::UARTDevice
     {
     public:
-      // --- Sensor Configuration Methods (called by generated code) ---
-      void register_listener(R60ABD1Listener *listener) { this->listeners_.push_back(listener); }
 
       #ifdef USE_BINARY_SENSOR
       SUB_BINARY_SENSOR(presence);
@@ -160,6 +158,7 @@ namespace esphome
       #endif
 
       // --- Component Overrides ---
+      R60ABD1Component();
       void setup() override;
       void loop() override;
       void dump_config() override;
@@ -175,11 +174,11 @@ namespace esphome
       void set_sleep_monitoring(bool enable);
       void set_heart_rate_waveform_reporting(bool enable);
       void set_respiration_waveform_reporting(bool enable);
-      void set_respiration_low_threshold(uint8_t threshold); // 10-20
+      void set_respiration_low_threshold(float threshold); // 10-20
       void set_struggle_detection(bool enable);
       void set_unattended_detection(bool enable);
-      void set_unattended_time(uint8_t minutes);    // 30-180 min
-      void set_sleep_end_time(uint8_t minutes);     // 5-120 min
+      void set_unattended_time(float minutes);    // 30-180 min
+      void set_sleep_end_time(float minutes);     // 5-120 min
       void set_struggle_sensitivity(uint8_t level); // 0:Low, 1:Medium, 2:High
 
     protected:

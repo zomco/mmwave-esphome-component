@@ -1,6 +1,6 @@
 #pragma once
 
-#include "esphome/components/select/select.h"
+#include "esphome/components/number/number.h"
 #include "../r60abd1.h"
 
 namespace esphome {

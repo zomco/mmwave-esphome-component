@@ -1,4 +1,4 @@
-#include "struggle_sensitivity_select.h"
+#include "respiration_low_threshold_number.h"
 
 namespace esphome {
 namespace r60abd1 {
