@@ -21,7 +21,7 @@ from . import r60abd1_ns, R60ABD1Component, CONF_R60ABD1_ID
 # Define keys for YAML configuration specific to this component's sensors
 CONF_DISTANCE = "distance"
 CONF_HEART_RATE = "heart_rate"
-CONF_MOTION_STATE = "motion_state"
+CONF_MOTION = "motion"
 CONF_BODY_MOVEMENT = "body_movement"
 CONF_RESPIRATION_RATE = "respiration_rate"
 CONF_SLEEP_SCORE = "sleep_score"
@@ -60,7 +60,7 @@ CONFIG_SCHEMA = cv.Schema(
             device_class=DEVICE_CLASS_DISTANCE,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
-        cv.Optional(CONF_MOTION_STATE): sensor.sensor_schema(
+        cv.Optional(CONF_MOTION): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,  # It's a state code (0, 1, 2)
             icon=ICON_MOTION_SENSOR,
             accuracy_decimals=0,
@@ -198,9 +198,9 @@ async def to_code(config):
         sens = await sensor.new_sensor(distance)
         cg.add(r60abd1_component.set_distance_sensor(sens))
 
-    if motion_state := config.get(CONF_MOTION_STATE):
-        sens = await sensor.new_sensor(motion_state)
-        cg.add(r60abd1_component.set_motion_state_sensor(sens))
+    if motion := config.get(CONF_MOTION):
+        sens = await sensor.new_sensor(motion)
+        cg.add(r60abd1_component.set_motion_sensor(sens))
 
     if body_movement := config.get(CONF_BODY_MOVEMENT):
         sens = await sensor.new_sensor(body_movement)

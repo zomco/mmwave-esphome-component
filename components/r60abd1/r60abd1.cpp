@@ -4,6 +4,9 @@
 #include "esphome/core/log.h"
 #include "esphome/core/hal.h" // Include for delay
 
+#define highbyte(val) (uint8_t)((val) >> 8)
+#define lowbyte(val) (uint8_t)((val) &0xff)
+
 namespace esphome
 {
   namespace r60abd1
@@ -47,11 +50,10 @@ namespace esphome
     void R60ABD1Component::dump_config()
     {
       ESP_LOGCONFIG(TAG, " R60ABD1:");
-      LOG_UART_DEVICE(this);
 
       #ifdef USE_BINARY_SENSOR
-      LOG_BINARY_SENSOR("  ", "Presence Sensor", this->presence_sensor_);
-      LOG_BINARY_SENSOR("  ", "Bed Status Sensor", this->bed_status_sensor_);
+      LOG_BINARY_SENSOR("  ", "Presence Sensor", this->presence_binary_sensor_);
+      LOG_BINARY_SENSOR("  ", "Bed Status Sensor", this->bed_status_binary_sensor_);
       #endif
 
       #ifdef USE_SENSOR
@@ -76,11 +78,11 @@ namespace esphome
       #endif
 
       #ifdef USE_TEXT_SENSOR
-      LOG_TEXT_SENSOR("  ", "Respiration Info Sensor", this->respiration_info_sensor_);
-      LOG_TEXT_SENSOR("  ", "Motion Text Sensor", this->motion_text_sensor_);
-      LOG_TEXT_SENSOR("  ", "Sleep Stage Sensor", this->sleep_stage_sensor_);
-      LOG_TEXT_SENSOR("  ", "Firmware Version Sensor", this->firmware_version_sensor_);
-      LOG_TEXT_SENSOR("  ", "Sleep Rating Sensors", this->sleep_rating_sensor_);
+      LOG_TEXT_SENSOR("  ", "Respiration Info Sensor", this->respiration_info_text_sensor_);
+      LOG_TEXT_SENSOR("  ", "Motion Text Sensor", this->motion_info_text_sensor_);
+      LOG_TEXT_SENSOR("  ", "Sleep Stage Sensor", this->sleep_stage_text_sensor_);
+      LOG_TEXT_SENSOR("  ", "Firmware Version Sensor", this->firmware_version_text_sensor_);
+      LOG_TEXT_SENSOR("  ", "Sleep Rating Sensors", this->sleep_rating_text_sensor_);
       #endif
     }
 
@@ -284,15 +286,15 @@ namespace esphome
         // Handle responses to queries or active reports
         case CMD_FIRMWARE_VERSION_REPORT: // 0x04 - Active report
         case CMD_FIRMWARE_VERSION_QUERY:  // 0xA4 - Response to query
-          if (length > 0 && this->firmware_version_sensor_ != nullptr)
+          if (length > 0 && this->firmware_version_text_sensor_ != nullptr)
           {
             // Convert data bytes to string
             std::string version_str(reinterpret_cast<const char *>(data), length);
             ESP_LOGI(TAG, "Received Firmware version: %s", version_str.c_str());
             // Publish state only if it has changed
-            if (this->firmware_version_sensor_->state != version_str)
+            if (this->firmware_version_text_sensor_->state != version_str)
             {
-              this->firmware_version_sensor_->publish_state(version_str);
+              this->firmware_version_text_sensor_->publish_state(version_str);
             }
           }
           break;
@@ -324,36 +326,36 @@ namespace esphome
         switch (command_word)
         {
         case CMD_PRESENCE_REPORT: // 0x01 - 存在信息主动上报
-          if (length == 1 && this->presence_sensor_ != nullptr)
+          if (length == 1 && this->presence_binary_sensor_ != nullptr)
           {
             bool state = (data[0] == 0x01); // 01:有人, 00:无人
             ESP_LOGD(TAG, "Presence report: %s", state ? "有人 (Present)" : "无人 (Absent)");
             // Publish state only if it has changed
-            if (this->presence_sensor_->state != state)
+            if (this->presence_binary_sensor_->state != state)
             {
-              this->presence_sensor_->publish_state(state);
+              this->presence_binary_sensor_->publish_state(state);
             }
           }
           break;
         case CMD_MOTION_REPORT: // 0x02 - 运动信息主动上报
           if (length == 1)
           {
-            int motion_state_code = data[0]; // 0:无, 1:静止, 2:活跃
-            ESP_LOGD(TAG, "Motion report code: %d", motion_state_code);
+            int motion_code = data[0]; // 0:无, 1:静止, 2:活跃
+            ESP_LOGD(TAG, "Motion report code: %d", motion_code);
             // Update numerical motion state sensor
             if (this->motion_sensor_ != nullptr)
             {
               // Publish state only if it has changed
-              if (this->motion_sensor_->raw_state != motion_state_code)
+              if (this->motion_sensor_->raw_state != motion_code)
               {
-                this->motion_sensor_->publish_state(motion_state_code);
+                this->motion_sensor_->publish_state(motion_code);
               }
             }
             // Update text motion state sensor
-            if (this->motion_text_sensor_ != nullptr)
+            if (this->motion_info_text_sensor_ != nullptr)
             {
               std::string state_str = "未知";
-              switch (motion_state_code)
+              switch (motion_code)
               {
               case 0:
                 state_str = "无";
@@ -366,9 +368,9 @@ namespace esphome
                 break;
               }
               // Publish state only if it has changed
-              if (this->motion_text_sensor_->state != state_str)
+              if (this->motion_info_text_sensor_->state != state_str)
               {
-                this->motion_text_sensor_->publish_state(state_str);
+                this->motion_info_text_sensor_->publish_state(state_str);
               }
             }
           }
@@ -396,7 +398,7 @@ namespace esphome
               value = distance_cm;
             }
             // Publish state only if it has changed (handle NAN comparison carefully)
-            if (isnan(this->distance_sensor_->raw_state) ? !isnan(value) : (this->distance_sensor_->raw_state != value))
+            if (std::isnan(this->distance_sensor_->raw_state) ? !std::isnan(value) : (this->distance_sensor_->raw_state != value))
             {
               this->distance_sensor_->publish_state(value);
             }
@@ -442,7 +444,7 @@ namespace esphome
               value = hr_value;
             }
             // Publish state only if it has changed
-            if (isnan(this->heart_rate_sensor_->raw_state) ? !isnan(value) : (this->heart_rate_sensor_->raw_state != value))
+            if (std::isnan(this->heart_rate_sensor_->raw_state) ? !std::isnan(value) : (this->heart_rate_sensor_->raw_state != value))
             {
               this->heart_rate_sensor_->publish_state(value);
             }
@@ -493,7 +495,7 @@ namespace esphome
         switch (command_word)
         {
         case CMD_RESPIRATION_INFO_REPORT: // 0x01 - 呼吸信息上报
-          if (length == 1 && this->respiration_info_sensor_ != nullptr)
+          if (length == 1 && this->respiration_info_text_sensor_ != nullptr)
           {
             std::string info_str = "未知";
             switch (data[0])
@@ -513,9 +515,9 @@ namespace esphome
             }
             ESP_LOGD(TAG, "Respiration info report: %s", info_str.c_str());
             // Publish state only if it has changed
-            if (this->respiration_info_sensor_->state != info_str)
+            if (this->respiration_info_text_sensor_->state != info_str)
             {
-              this->respiration_info_sensor_->publish_state(info_str);
+              this->respiration_info_text_sensor_->publish_state(info_str);
             }
           }
           break;
@@ -531,7 +533,7 @@ namespace esphome
               value = resp_value;
             }
             // Publish state only if it has changed
-            if (isnan(this->respiration_rate_sensor_->raw_state) ? !isnan(value) : (this->respiration_rate_sensor_->raw_state != value))
+            if (std::isnan(this->respiration_rate_sensor_->raw_state) ? !std::isnan(value) : (this->respiration_rate_sensor_->raw_state != value))
             {
               this->respiration_rate_sensor_->publish_state(value);
             }
@@ -564,25 +566,25 @@ namespace esphome
           {
             ESP_LOGD(TAG, "Respiration waveform report: %02X %02X %02X %02X %02X",
                      data[0], data[1], data[2], data[3], data[4]);
-            if (this->respiration_wave_0_sensor_ != nullptr)
+            if (this->respiration_rate_wave_0_sensor_ != nullptr)
             {
-              this->respiration_wave_0_sensor_->publish_state(data[0]);
+              this->respiration_rate_wave_0_sensor_->publish_state(data[0]);
             }
-            if (this->respiration_wave_1_sensor_ != nullptr)
+            if (this->respiration_rate_wave_1_sensor_ != nullptr)
             {
-              this->respiration_wave_1_sensor_->publish_state(data[1]);
+              this->respiration_rate_wave_1_sensor_->publish_state(data[1]);
             }
-            if (this->respiration_wave_2_sensor_ != nullptr)
+            if (this->respiration_rate_wave_2_sensor_ != nullptr)
             {
-              this->respiration_wave_2_sensor_->publish_state(data[2]);
+              this->respiration_rate_wave_2_sensor_->publish_state(data[2]);
             }
-            if (this->respiration_wave_3_sensor_ != nullptr)
+            if (this->respiration_rate_wave_3_sensor_ != nullptr)
             {
-              this->respiration_wave_3_sensor_->publish_state(data[3]);
+              this->respiration_rate_wave_3_sensor_->publish_state(data[3]);
             }
-            if (this->respiration_wave_4_sensor_ != nullptr)
+            if (this->respiration_rate_wave_4_sensor_ != nullptr)
             {
-              this->respiration_wave_4_sensor_->publish_state(data[4]);
+              this->respiration_rate_wave_4_sensor_->publish_state(data[4]);
             }
           }
           break;
@@ -594,20 +596,20 @@ namespace esphome
         {
         // Handle status reports
         case CMD_SLEEP_BED_STATUS_REPORT: // 0x01 - 入床/离床状态
-          if (length == 1 && this->bed_status_sensor_ != nullptr)
+          if (length == 1 && this->bed_status_binary_sensor_ != nullptr)
           {
             // 0x00:离床, 0x01:入床, 0x02:无(实时探测模式下显示)
             bool state = (data[0] == 0x01); // Treat 0x00 and 0x02 as 'false' (not in bed)
             ESP_LOGD(TAG, "Bed status report: %s (Raw: 0x%02X)", state ? "在床 (In Bed)" : "离床/无 (Out/None)", data[0]);
             // Publish state only if it has changed
-            if (this->bed_status_sensor_->state != state)
+            if (this->bed_status_binary_sensor_->state != state)
             {
-              this->bed_status_sensor_->publish_state(state);
+              this->bed_status_binary_sensor_->publish_state(state);
             }
           }
           break;
         case CMD_SLEEP_STAGE_REPORT: // 0x02 - 睡眠状态
-          if (length == 1 && this->sleep_stage_sensor_ != nullptr)
+          if (length == 1 && this->sleep_stage_text_sensor_ != nullptr)
           {
             // 0x00:深睡, 0x01:浅睡, 0x02:清醒, 0x03:无(离床时/实时探测模式下上报)
             std::string stage_str = "未知";
@@ -628,9 +630,9 @@ namespace esphome
             }
             ESP_LOGD(TAG, "Sleep stage report: %s", stage_str.c_str());
             // Publish state only if it has changed
-            if (this->sleep_stage_sensor_->state != stage_str)
+            if (this->sleep_stage_text_sensor_->state != stage_str)
             {
-              this->sleep_stage_sensor_->publish_state(stage_str);
+              this->sleep_stage_text_sensor_->publish_state(stage_str);
             }
           }
           break;
@@ -782,20 +784,21 @@ namespace esphome
       this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_SWITCH, {enable ? (uint8_t)0x01 : (uint8_t)0x00});
     }
 
-    void R60ABD1Component::set_heart_rate_waveform_reporting(bool enable)
+    void R60ABD1Component::set_heart_rate_waveform(bool enable)
     {
       ESP_LOGD(TAG, "Setting heart rate waveform reporting: %s", enable ? "ON" : "OFF");
       this->send_command(CTRL_HEART_RATE, CMD_HEART_RATE_WAVE_SWITCH, {enable ? (uint8_t)0x01 : (uint8_t)0x00});
     }
 
-    void R60ABD1Component::set_respiration_waveform_reporting(bool enable)
+    void R60ABD1Component::set_respiration_waveform(bool enable)
     {
       ESP_LOGD(TAG, "Setting respiration waveform reporting: %s", enable ? "ON" : "OFF");
       this->send_command(CTRL_RESPIRATION, CMD_RESPIRATION_WAVE_SWITCH, {enable ? (uint8_t)0x01 : (uint8_t)0x00});
     }
 
-    void R60ABD1Component::set_respiration_low_threshold(uint8_t threshold)
+    void R60ABD1Component::set_respiration_low_threshold(float value)
     {
+      uint8_t threshold = (uint8_t)value;
       // Clamp value to protocol range [10, 20]
       uint8_t clamped_threshold = std::max((uint8_t)10, std::min(threshold, (uint8_t)20));
       if (clamped_threshold != threshold)
@@ -818,8 +821,9 @@ namespace esphome
       this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_UNATTENDED_SWITCH_SET, {enable ? (uint8_t)0x01 : (uint8_t)0x00});
     }
 
-    void R60ABD1Component::set_unattended_time(uint8_t minutes)
+    void R60ABD1Component::set_unattended_time(float value)
     {
+      uint8_t minutes = (uint8_t)value;
       // Clamp value to protocol range [30, 180]
       uint8_t clamped_minutes = std::max((uint8_t)30, std::min(minutes, (uint8_t)180));
       if (clamped_minutes != minutes)
@@ -831,8 +835,9 @@ namespace esphome
       this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_UNATTENDED_TIME_SET, {clamped_minutes});
     }
 
-    void R60ABD1Component::set_sleep_end_time(uint8_t minutes)
+    void R60ABD1Component::set_sleep_end_time(float value)
     {
+      uint8_t minutes = (uint8_t)value;
       // Clamp value to protocol range [5, 120]
       uint8_t clamped_minutes = std::max((uint8_t)5, std::min(minutes, (uint8_t)120));
       if (clamped_minutes != minutes)
@@ -843,8 +848,9 @@ namespace esphome
       this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_END_TIME_SET, {clamped_minutes});
     }
 
-    void R60ABD1Component::set_struggle_sensitivity(uint8_t level)
+    void R60ABD1Component::set_struggle_sensitivity(const std::string &value)
     {
+      uint8_t level = (uint8_t)STRUGGLE_SENSITIVITY_ENUM_TO_INT.at(value);
       // Clamp value to protocol range [0, 2]
       uint8_t clamped_level = std::min(level, (uint8_t)2);
       if (clamped_level != level)

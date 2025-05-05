@@ -5,7 +5,7 @@ namespace r60abd1 {
 
 void StruggleSensitivitySelect::control(const std::string &value) {
   this->publish_state(value);
-  this->parent_->set_struggle_sensitivity(state);
+  this->parent_->set_struggle_sensitivity(value);
 }
 
 }  // namespace r60abd1

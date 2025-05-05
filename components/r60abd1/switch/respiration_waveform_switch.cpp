@@ -1,4 +1,4 @@
-#include "presence_detection.switch.h"
+#include "respiration_waveform_switch.h"
 
 namespace esphome {
 namespace r60abd1 {

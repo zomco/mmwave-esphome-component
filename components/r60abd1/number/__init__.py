@@ -58,18 +58,18 @@ async def to_code(config):
             respiration_low_threshold, min_value=10, max_value=20, step=1
         )
         await cg.register_parented(n, config[CONF_R60ABD1_ID])
-        cg.add(r60abd1_component.set_respiration_low_threshold(n))
+        cg.add(r60abd1_component.set_respiration_low_threshold_number(n))
 
     if unattended_time := config.get(CONF_UNATTENDED_TIME):
         n = await number.new_number(
             unattended_time, min_value=30, max_value=180, step=10
         )
         await cg.register_parented(n, config[CONF_R60ABD1_ID])
-        cg.add(r60abd1_component.set_unattended_time(n))
+        cg.add(r60abd1_component.set_unattended_time_number(n))
 
     if sleep_end_time := config.get(CONF_SLEEP_END_TIME):
         n = await number.new_number(
             sleep_end_time, min_value=5, max_value=120, step=1
         )
         await cg.register_parented(n, config[CONF_R60ABD1_ID])
-        cg.add(r60abd1_component.set_sleep_end_time(n))
+        cg.add(r60abd1_component.set_sleep_end_time_number(n))

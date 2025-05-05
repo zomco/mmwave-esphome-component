@@ -9,7 +9,7 @@ from esphome.const import (
 from . import r60abd1_ns, R60ABD1Component, CONF_R60ABD1_ID
 
 # Define keys for YAML configuration
-CONF_MOTION_TEXT = "motion_text"
+CONF_MOTION_INFO = "motion_info"
 CONF_RESPIRATION_INFO = "respiration_info"
 CONF_SLEEP_STAGE = "sleep_stage"
 CONF_SLEEP_RATING = "sleep_rating"
@@ -24,7 +24,7 @@ ICON_INFORMATION_OUTLINE = "mdi:information-outline"
 CONFIG_SCHEMA = cv.Schema(
     {
         cv.GenerateID(CONF_R60ABD1_ID): cv.use_id(R60ABD1Component),  # Reference the hub
-        cv.Optional(CONF_MOTION_TEXT): text_sensor.text_sensor_schema(
+        cv.Optional(CONF_MOTION_INFO): text_sensor.text_sensor_schema(
             icon=ICON_MOTION_SENSOR  # Or mdi:walk
         ),
         cv.Optional(CONF_RESPIRATION_INFO): text_sensor.text_sensor_schema(
@@ -41,9 +41,9 @@ CONFIG_SCHEMA = cv.Schema(
 async def to_code(config):
     r60abd1_component = await cg.get_variable(config[CONF_R60ABD1_ID])  # Get the hub instance
 
-    if motion_text := config.get(CONF_MOTION_TEXT):
-        sens = await text_sensor.new_text_sensor(motion_text)
-        cg.add(r60abd1_component.set_motion_text_text_sensor(sens))
+    if motion_info := config.get(CONF_MOTION_INFO):
+        sens = await text_sensor.new_text_sensor(motion_info)
+        cg.add(r60abd1_component.set_motion_info_text_sensor(sens))
 
     if respiration_info := config.get(CONF_RESPIRATION_INFO):
         sens = await text_sensor.new_text_sensor(respiration_info)

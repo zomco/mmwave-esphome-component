@@ -11,15 +11,29 @@
 #ifdef USE_TEXT_SENSOR
 #include "esphome/components/text_sensor/text_sensor.h"
 #endif
+#ifdef USE_NUMBER
+#include "esphome/components/number/number.h"
+#endif
+#ifdef USE_SWITCH
+#include "esphome/components/switch/switch.h"
+#endif
+#ifdef USE_SELECT
+#include "esphome/components/select/select.h"
+#endif
 #include "esphome/components/uart/uart.h"
 #include "esphome/core/automation.h"
 #include "esphome/core/helpers.h"
+
+#include <map>
 #include <vector>
+#include <string>
 
 namespace esphome
 {
   namespace r60abd1
   {
+
+    #define CHECK_BIT(var, pos) (((var) >> (pos)) & 1)
 
     // Define constants based on the protocol document
     const uint8_t FRAME_HEADER[] = {0x53, 0x59};
@@ -116,6 +130,75 @@ namespace esphome
     const uint8_t CMD_SLEEP_END_TIME_QUERY = 0x96;             // 查询睡眠截止时间
     const uint8_t CMD_SLEEP_STRUGGLE_SENSITIVITY_QUERY = 0x9A; // 查询挣扎状态判读
 
+    enum SwitchStructure : uint8_t {
+      SWITCH_OFF = 0x00,
+      SWITCH_ON = 0x01,
+    };
+
+    static const std::map<std::string, uint8_t> SWITCH_ENUM_TO_INT{
+      {"off", SWITCH_OFF}, {"on", SWITCH_ON}};
+
+    static const std::map<uint8_t, std::string> SWITCH_INT_TO_ENUM{
+      {SWITCH_OFF, "off"}, {SWITCH_ON, "on"}};
+      
+    enum StruggleSensitivityStructure : uint8_t {
+      STRUGGLE_SENSITIVITY_LOW = 0x00,
+      STRUGGLE_SENSITIVITY_MEDIUM = 0x01,
+      STRUGGLE_SENSITIVITY_HIGH = 0x02
+    };
+    
+    static const std::map<std::string, uint8_t> STRUGGLE_SENSITIVITY_ENUM_TO_INT{
+      {"low", STRUGGLE_SENSITIVITY_LOW}, {"medium", STRUGGLE_SENSITIVITY_MEDIUM}, {"high", STRUGGLE_SENSITIVITY_HIGH}};
+
+    static const std::map<uint8_t, std::string> STRUGGLE_SENSITIVITY_INT_TO_ENUM{
+      {STRUGGLE_SENSITIVITY_LOW, "low"}, {STRUGGLE_SENSITIVITY_MEDIUM, "medium"}, {STRUGGLE_SENSITIVITY_HIGH, "high"}};
+
+    enum PresenceStructure : uint8_t {
+      PRESENCE_NOBODY = 0x00,
+      PRESENCE_SOMEBODY = 0x01,
+    };
+
+    enum MotionInfoStructure : uint8_t {
+      MOTION_INFO_NONE = 0x00,
+      MOTION_INFO_STILL = 0x01,
+      MOTION_INFO_MOVE = 0x02,
+    };
+
+    enum RespirationInfoStructure : uint8_t {
+      RESPIRATION_INFO_NORMAL = 0x00,
+      RESPIRATION_INFO_HIGH = 0x01,
+      RESPIRATION_INFO_LOG = 0x02,
+    };
+
+    enum BedStatusStructure : uint8_t {
+      BED_STATUS_OUT = 0x00,
+      BED_STATUS_IN = 0x01
+    };
+
+    enum SleepStageStructure : uint8_t {
+      SLEEP_STAGE_DEEP = 0x00,
+      SLEEP_STAGE_LIGHT = 0x01,
+      SLEEP_STAGE_AWAKE = 0x02
+    };
+    
+    enum SleepRatingStructure : uint8_t {
+      SLEEP_RATING_NONE = 0x00,
+      SLEEP_RATING_GOOD = 0x01,
+      SLEEP_RATING_MEDIUM = 0x02,
+      SLEEP_RATING_BAD = 0x03
+    };
+
+    enum StruggleStructure : uint8_t {
+      STRUGGLE_NONE = 0x00,
+      STRUGGLE_NORMAL = 0x01,
+      STRUGGLE_ABNORMAL = 0x02
+    };
+
+    enum UnattendedStructure : uint8_t {
+      UNATTENDED_NONE = 0x00,
+      UNATTENDED_NORMAL = 0x01,
+      UNATTENDED_ABNORMAL = 0x02
+    };
 
     // Main Hub Component
     class R60ABD1Component : public Component, public uart::UARTDevice
@@ -129,7 +212,7 @@ namespace esphome
 
       #ifdef USE_TEXT_SENSOR
       SUB_TEXT_SENSOR(respiration_info);
-      SUB_TEXT_SENSOR(motion_text);
+      SUB_TEXT_SENSOR(motion_info);
       SUB_TEXT_SENSOR(sleep_stage);
       SUB_TEXT_SENSOR(firmware_version);
       SUB_TEXT_SENSOR(sleep_rating);
@@ -157,6 +240,27 @@ namespace esphome
       SUB_SENSOR(respiration_rate_wave_4);
       #endif
 
+      #ifdef USE_SELECT
+      SUB_SELECT(struggle_sensitivity);
+      #endif
+
+      #ifdef USE_SWITCH
+      SUB_SWITCH(heart_rate_detection);
+      SUB_SWITCH(heart_rate_waveform);
+      SUB_SWITCH(presence_detection);
+      SUB_SWITCH(respiration_detection);
+      SUB_SWITCH(respiration_waveform);
+      SUB_SWITCH(sleep_monitoring);
+      SUB_SWITCH(struggle_detection);
+      SUB_SWITCH(unattended_detection);
+      #endif
+
+      #ifdef USE_NUMBER
+      SUB_NUMBER(respiration_low_threshold);
+      SUB_NUMBER(sleep_end_time);
+      SUB_NUMBER(unattended_time);
+      #endif
+
       // --- Component Overrides ---
       R60ABD1Component();
       void setup() override;
@@ -167,19 +271,26 @@ namespace esphome
       // --- Public Methods for Control (called by switch/number/etc.) ---
       void send_command(uint8_t control_word, uint8_t command_word, const std::vector<uint8_t> &data_payload);
 
-      // Control Methods Implementations (declared here, defined in .cpp)
-      void set_presence_detection(bool enable);
+      #ifdef USE_SWITCH
       void set_heart_rate_detection(bool enable);
+      void set_heart_rate_waveform(bool enable);
+      void set_presence_detection(bool enable);
       void set_respiration_detection(bool enable);
+      void set_respiration_waveform(bool enable);
       void set_sleep_monitoring(bool enable);
-      void set_heart_rate_waveform_reporting(bool enable);
-      void set_respiration_waveform_reporting(bool enable);
-      void set_respiration_low_threshold(float threshold); // 10-20
       void set_struggle_detection(bool enable);
       void set_unattended_detection(bool enable);
+      #endif
+
+      #ifdef USE_SELECT
+      void set_struggle_sensitivity(const std::string &value); // 0:Low, 1:Medium, 2:High
+      #endif
+
+      #ifdef USE_NUMBER
+      void set_respiration_low_threshold(float threshold); // 10-20
       void set_unattended_time(float minutes);    // 30-180 min
       void set_sleep_end_time(float minutes);     // 5-120 min
-      void set_struggle_sensitivity(uint8_t level); // 0:Low, 1:Medium, 2:High
+      #endif
 
     protected:
       // --- Data Processing ---

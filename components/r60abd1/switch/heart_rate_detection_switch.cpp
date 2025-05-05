@@ -1,4 +1,4 @@
-#include "presence_detection.switch.h"
+#include "heart_rate_detection_switch.h"
 
 namespace esphome {
 namespace r60abd1 {
