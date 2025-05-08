@@ -15,9 +15,7 @@ CONF_SLEEP_STAGE = "sleep_stage"
 CONF_SLEEP_RATING = "sleep_rating"
 CONF_FIRMWARE_VERSION = "firmware_version"
 
-ICON_LUNGS = "mdi:lungs"
 ICON_SLEEP = "mdi:sleep"
-ICON_INFORMATION_OUTLINE = "mdi:information-outline"
 
 
 # Configuration schema for individual text sensors
@@ -28,11 +26,17 @@ CONFIG_SCHEMA = cv.Schema(
             icon=ICON_MOTION_SENSOR  # Or mdi:walk
         ),
         cv.Optional(CONF_RESPIRATION_INFO): text_sensor.text_sensor_schema(
-            icon=ICON_INFORMATION_OUTLINE  # Or ICON_LUNGS
+            icon="mdi:lungs"  # Or ICON_LUNGS
         ),
-        cv.Optional(CONF_SLEEP_STAGE): text_sensor.text_sensor_schema(icon=ICON_SLEEP),
-        cv.Optional(CONF_SLEEP_RATING): text_sensor.text_sensor_schema(icon=ICON_SLEEP),
-        cv.Optional(CONF_FIRMWARE_VERSION): text_sensor.text_sensor_schema(icon=ICON_SLEEP),
+        cv.Optional(CONF_SLEEP_STAGE): text_sensor.text_sensor_schema(
+            icon="mdi:state-machine"
+        ),
+        cv.Optional(CONF_SLEEP_RATING): text_sensor.text_sensor_schema(
+            icon="mdi:star"
+        ),
+        cv.Optional(CONF_FIRMWARE_VERSION): text_sensor.text_sensor_schema(
+            icon="mdi:information-outline"
+        ),
     }
 )
 

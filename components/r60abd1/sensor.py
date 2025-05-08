@@ -39,12 +39,6 @@ CONF_RESPIRATION_RATE_WAVE_2 = "respiration_rate_wave_2"
 CONF_RESPIRATION_RATE_WAVE_3 = "respiration_rate_wave_3"
 CONF_RESPIRATION_RATE_WAVE_4 = "respiration_rate_wave_4"
 
-ICON_SCOREBOARD = "mdi:scoreboard"
-ICON_LUNGS = "mdi:lungs"
-ICON_AXIS_X_ARROW = "mdi:axis-x-arrow"
-ICON_AXIS_Y_ARROW = "mdi:axis-y-arrow"
-ICON_AXIS_Z_ARROW = "mdi:axis-z-arrow"
-
 
 # Configuration schema for individual sensors
 # Users will define sensors under the 'sensor:' platform in their YAML
@@ -55,17 +49,10 @@ CONFIG_SCHEMA = cv.Schema(
         ),  # Reference the main hub component ID
         cv.Optional(CONF_DISTANCE): sensor.sensor_schema(
             unit_of_measurement=UNIT_CENTIMETER,
-            icon=ICON_RULER,
+            icon="mdi:signal-distance-variant",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_DISTANCE,
             state_class=STATE_CLASS_MEASUREMENT,
-        ),
-        cv.Optional(CONF_MOTION): sensor.sensor_schema(
-            unit_of_measurement=UNIT_EMPTY,  # It's a state code (0, 1, 2)
-            icon=ICON_MOTION_SENSOR,
-            accuracy_decimals=0,
-            device_class=DEVICE_CLASS_EMPTY,  # Not a standard device class
-            state_class=STATE_CLASS_MEASUREMENT,  # Or maybe none if just informational?
         ),
         cv.Optional(CONF_BODY_MOVEMENT): sensor.sensor_schema(
             unit_of_measurement=UNIT_PERCENT,  # Assuming 0-100 is like a percentage
@@ -83,105 +70,104 @@ CONFIG_SCHEMA = cv.Schema(
         ),
         cv.Optional(CONF_RESPIRATION_RATE): sensor.sensor_schema(
             unit_of_measurement="rpm",  # breaths per minute
-            icon=ICON_LUNGS,
+            icon="mdi:lungs",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_SPEED,  # Using speed as it's a rate
             state_class=STATE_CLASS_MEASUREMENT,
         ),
         cv.Optional(CONF_SLEEP_SCORE): sensor.sensor_schema(
-            unit_of_measurement="分",  # Score unit
-            icon=ICON_SCOREBOARD,
+            icon="mdi:percent-outline",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
         cv.Optional(CONF_POSITION_X): sensor.sensor_schema(
             unit_of_measurement=UNIT_CENTIMETER,
-            icon=ICON_AXIS_X_ARROW,
+            icon="mdi:axis-x-arrow",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_DISTANCE,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
         cv.Optional(CONF_POSITION_Y): sensor.sensor_schema(
             unit_of_measurement=UNIT_CENTIMETER,
-            icon=ICON_AXIS_Y_ARROW,
+            icon="mdi:axis-y-arrow",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_DISTANCE,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
         cv.Optional(CONF_POSITION_Z): sensor.sensor_schema(
             unit_of_measurement=UNIT_CENTIMETER,
-            icon=ICON_AXIS_Z_ARROW,
+            icon="mdi:axis-z-arrow",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_DISTANCE,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
         cv.Optional(CONF_HEART_RATE_WAVE_0): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
-            icon=ICON_HEART_PULSE,
+            icon="mdi:sine-wave",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
         cv.Optional(CONF_HEART_RATE_WAVE_1): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
-            icon=ICON_HEART_PULSE,
+            icon="mdi:sine-wave",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
         cv.Optional(CONF_HEART_RATE_WAVE_2): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
-            icon=ICON_HEART_PULSE,
+            icon="mdi:sine-wave",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
         cv.Optional(CONF_HEART_RATE_WAVE_3): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
-            icon=ICON_HEART_PULSE,
+            icon="mdi:sine-wave",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
         cv.Optional(CONF_HEART_RATE_WAVE_4): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
-            icon=ICON_HEART_PULSE,
+            icon="mdi:sine-wave",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
         cv.Optional(CONF_RESPIRATION_RATE_WAVE_0): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
-            icon=ICON_LUNGS,
+            icon="mdi:sine-wave",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
         cv.Optional(CONF_RESPIRATION_RATE_WAVE_1): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
-            icon=ICON_LUNGS,
+            icon="mdi:sine-wave",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
         cv.Optional(CONF_RESPIRATION_RATE_WAVE_2): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
-            icon=ICON_LUNGS,
+            icon="mdi:sine-wave",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
         cv.Optional(CONF_RESPIRATION_RATE_WAVE_3): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
-            icon=ICON_LUNGS,
+            icon="mdi:sine-wave",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
         cv.Optional(CONF_RESPIRATION_RATE_WAVE_4): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
-            icon=ICON_LUNGS,
+            icon="mdi:lungs",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
@@ -197,10 +183,6 @@ async def to_code(config):
     if distance := config.get(CONF_DISTANCE):
         sens = await sensor.new_sensor(distance)
         cg.add(r60abd1_component.set_distance_sensor(sens))
-
-    if motion := config.get(CONF_MOTION):
-        sens = await sensor.new_sensor(motion)
-        cg.add(r60abd1_component.set_motion_sensor(sens))
 
     if body_movement := config.get(CONF_BODY_MOVEMENT):
         sens = await sensor.new_sensor(body_movement)

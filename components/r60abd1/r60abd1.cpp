@@ -25,16 +25,23 @@ namespace esphome
       this->set_timeout("initial_query", 5000, [this]()
                         {
         ESP_LOGD(TAG, "Querying initial states...");
-        // Command: Query Firmware Version (Control=0x02, Command=0xA4, Data=0x0F)
-        this->send_command(CTRL_PRODUCT_INFO, CMD_FIRMWARE_VERSION_QUERY, {0x0F}); });
-        this->send_command(CTRL_PRESENCE, CMD_PRESENCE_SWITCH_QUERY, {0x0F}); // Query presence detection status
-        this->send_command(CTRL_HEART_RATE, CMD_HEART_RATE_SWITCH_QUERY, {0x0F}); // Query HR detection status
-        this->send_command(CTRL_RESPIRATION, CMD_RESPIRATION_SWITCH_QUERY, {0x0F}); // Query Resp detection status
-        this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_SWITCH_QUERY, {0x0F}); // Query Sleep monitoring status
-        // Query other settings like thresholds if needed
+        this->send_command(CTRL_PRODUCT_INFO, CMD_FIRMWARE_VERSION_QUERY, {0x0F});
+
+        this->send_command(CTRL_PRESENCE, CMD_PRESENCE_SWITCH_QUERY, {0x0F}); 
+        this->send_command(CTRL_HEART_RATE, CMD_HEART_RATE_SWITCH_QUERY, {0x0F});
+        this->send_command(CTRL_HEART_RATE, CMD_HEART_RATE_WAVE_SWITCH_QUERY, {0x0F});
+        this->send_command(CTRL_RESPIRATION, CMD_RESPIRATION_SWITCH_QUERY, {0x0F});
+        this->send_command(CTRL_RESPIRATION, CMD_RESPIRATION_WAVE_SWITCH_QUERY, {0x0F});
+        this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_SWITCH_QUERY, {0x0F});
+        this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_STRUGGLE_SWITCH_QUERY, {0x0F});
+        this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_UNATTENDED_SWITCH_QUERY, {0x0F});
+
         this->send_command(CTRL_RESPIRATION, CMD_RESPIRATION_LOW_THRESHOLD_QUERY, {0x0F});
         this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_UNATTENDED_TIME_QUERY, {0x0F});
+        this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_END_TIME_QUERY, {0x0F});
+
         this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_STRUGGLE_SENSITIVITY_QUERY, {0x0F});
+      });
     }
 
     void R60ABD1Component::loop()
@@ -325,6 +332,13 @@ namespace esphome
       case CTRL_PRESENCE: // 0x80 - 人体存在
         switch (command_word)
         {
+        case CMD_PRESENCE_SWITCH: // 0x00
+          if (length == 1 && this->presence_detection_switch_ != nullptr) {
+            bool value = data[0] == 0x01;
+            ESP_LOGD(TAG, "Presence detection switch confirmation: %s", value ? "Enabled" : "Disabled");
+            this->presence_detection_switch_->publish_state(value);
+          }
+          break;
         case CMD_PRESENCE_REPORT: // 0x01 - 存在信息主动上报
           if (length == 1 && this->presence_binary_sensor_ != nullptr)
           {
@@ -354,23 +368,11 @@ namespace esphome
             // Update text motion state sensor
             if (this->motion_info_text_sensor_ != nullptr)
             {
-              std::string state_str = "未知";
-              switch (motion_code)
-              {
-              case 0:
-                state_str = "无";
-                break;
-              case 1:
-                state_str = "静止";
-                break;
-              case 2:
-                state_str = "活跃";
-                break;
-              }
+              std::string state_str = MOTION_INFO_INT_TO_ENUM.at(motion_code);
               // Publish state only if it has changed
               if (this->motion_info_text_sensor_->state != state_str)
               {
-                this->motion_info_text_sensor_->publish_state(state_str);
+                this->motion_info_text_sensor_->publish_state(state_str.c_str());
               }
             }
           }
@@ -422,9 +424,11 @@ namespace esphome
           break;
         // Handle query responses if needed (e.g., 0x80, 0x81, 0x82...)
         case CMD_PRESENCE_SWITCH_QUERY: // 0x80 - Response to enable/disable query
-          if (length == 1)
-            ESP_LOGD(TAG, "Presence detection status query response: %s", data[0] == 0x01 ? "Enabled" : "Disabled");
-          // Could potentially update an internal state variable here
+          if (length == 1 && this->presence_detection_switch_ != nullptr) {
+            bool value = data[0] == 0x01;
+            ESP_LOGD(TAG, "Presence detection status query response: %s", value ? "Enabled" : "Disabled");
+            this->presence_detection_switch_->publish_state(value);
+          }
           break;
         }
         break;
@@ -432,6 +436,13 @@ namespace esphome
       case CTRL_HEART_RATE: // 0x85 - 心率监测
         switch (command_word)
         {
+        case CMD_HEART_RATE_SWITCH: // 0x00
+          if (length == 1 && this->heart_rate_detection_switch_ != nullptr) {
+            bool value = data[0] == 0x01;
+            ESP_LOGD(TAG, "Heart rate detection switch confirmation: %s", value ? "Enabled" : "Disabled");
+            this->heart_rate_detection_switch_->publish_state(value);
+          }
+          break;
         case CMD_HEART_RATE_VALUE_REPORT: // 0x02 - 心率数值上报
           if (length == 1 && this->heart_rate_sensor_ != nullptr)
           {
@@ -450,16 +461,6 @@ namespace esphome
             }
           }
           break;
-        // Handle query responses if needed (e.g., 0x80, 0x8A)
-        case CMD_HEART_RATE_SWITCH_QUERY: // 0x80
-          if (length == 1)
-            ESP_LOGD(TAG, "Heart rate detection status query response: %s", data[0] == 0x01 ? "Enabled" : "Disabled");
-          break;
-        case CMD_HEART_RATE_WAVE_SWITCH_QUERY: // 0x8A
-          if (length == 1)
-            ESP_LOGD(TAG, "Heart rate waveform reporting query response: %s", data[0] == 0x01 ? "Enabled" : "Disabled");
-          break;
-        // Ignore waveform data (0x05) for now
         case CMD_HEART_RATE_WAVE_REPORT: // 0x05
           ESP_LOGV(TAG, "Heart rate waveform data received (ignored).");
           if (length == 5)
@@ -488,36 +489,50 @@ namespace esphome
             }
           }
           break;
+        case CMD_HEART_RATE_WAVE_SWITCH: // 0x0A
+          if (length == 1 && this->heart_rate_waveform_switch_ != nullptr) {
+            bool value = data[0] == 0x01;
+            ESP_LOGD(TAG, "Heart rate waveform switch confirmation: %s", value ? "Enabled" : "Disabled");
+            this->heart_rate_waveform_switch_->publish_state(value);
+          }
+          break;
+        // Handle query responses if needed (e.g., 0x80, 0x8A)
+        case CMD_HEART_RATE_SWITCH_QUERY: // 0x80
+          if (length == 1 && this->heart_rate_detection_switch_ != nullptr) {
+            bool value = data[0] == 0x01;
+            ESP_LOGD(TAG, "Heart rate detection status query response: %s", value ? "Enabled" : "Disabled");
+            this->heart_rate_detection_switch_->publish_state(value);
+          }
+          break;
+        case CMD_HEART_RATE_WAVE_SWITCH_QUERY: // 0x8A
+          if (length == 1 && this->heart_rate_waveform_switch_ != nullptr) {
+            bool value = data[0] == 0x01;
+            ESP_LOGD(TAG, "Heart rate waveform reporting query response: %s", value ? "Enabled" : "Disabled");
+            this->heart_rate_waveform_switch_->publish_state(value);
+          }
+          break;
         }
         break;
 
       case CTRL_RESPIRATION: // 0x81 - 呼吸检测
         switch (command_word)
         {
+        case CMD_RESPIRATION_SWITCH: // 0x80
+          if (length == 1 && this->respiration_detection_switch_ != nullptr) {
+            bool value = data[0] == 0x01;
+            ESP_LOGD(TAG, "Respiration detection switch confirmation: %s", value ? "Enabled" : "Disabled");
+            this->respiration_detection_switch_->publish_state(value);
+          }
+          break;
         case CMD_RESPIRATION_INFO_REPORT: // 0x01 - 呼吸信息上报
           if (length == 1 && this->respiration_info_text_sensor_ != nullptr)
           {
-            std::string info_str = "未知";
-            switch (data[0])
-            {
-            case 0x01:
-              info_str = "正常";
-              break;
-            case 0x02:
-              info_str = "呼吸过高";
-              break;
-            case 0x03:
-              info_str = "呼吸过低";
-              break;
-            case 0x04:
-              info_str = "无";
-              break; // 无呼吸/无人
-            }
+            std::string info_str = RESPIRATION_INFO_INT_TO_ENUM.at(data[0]);
             ESP_LOGD(TAG, "Respiration info report: %s", info_str.c_str());
             // Publish state only if it has changed
             if (this->respiration_info_text_sensor_->state != info_str)
             {
-              this->respiration_info_text_sensor_->publish_state(info_str);
+              this->respiration_info_text_sensor_->publish_state(info_str.c_str());
             }
           }
           break;
@@ -539,27 +554,6 @@ namespace esphome
             }
           }
           break;
-        // Handle query responses if needed (e.g., 0x80, 0x8B, 0x8C)
-        case CMD_RESPIRATION_SWITCH_QUERY: // 0x80
-          if (length == 1)
-            ESP_LOGD(TAG, "Respiration detection status query response: %s", data[0] == 0x01 ? "Enabled" : "Disabled");
-          break;
-        case CMD_RESPIRATION_LOW_THRESHOLD_QUERY: // 0x8B
-          if (length == 1)
-            ESP_LOGD(TAG, "Respiration low threshold query response: %d", data[0]);
-          // Could potentially update number entity state if implemented
-          break;
-        case CMD_RESPIRATION_WAVE_SWITCH_QUERY: // 0x8C
-          if (length == 1)
-            ESP_LOGD(TAG, "Respiration waveform reporting query response: %s", data[0] == 0x01 ? "Enabled" : "Disabled");
-          break;
-        // Handle command confirmation replies
-        case CMD_RESPIRATION_LOW_THRESHOLD_SET: // 0x0B
-          if (length == 1)
-            ESP_LOGD(TAG, "Respiration low threshold set confirmation: %d", data[0]);
-          // Could potentially update number entity state if implemented
-          break;
-        // Ignore waveform data (0x05) for now
         case CMD_RESPIRATION_WAVE_REPORT: // 0x05
           ESP_LOGV(TAG, "Respiration waveform data received (ignored).");
           if (length == 5)
@@ -588,6 +582,42 @@ namespace esphome
             }
           }
           break;
+        case CMD_RESPIRATION_LOW_THRESHOLD_SET: // 0x0B
+          if (length == 1 && this->respiration_low_threshold_number_ != nullptr) {
+            float value = data[0];
+            ESP_LOGD(TAG, "Respiration low threshold set confirmation: %d", data[0]);
+            this->respiration_low_threshold_number_->publish_state(value);
+          }
+          break;
+        case CMD_RESPIRATION_WAVE_SWITCH: // 0x0C
+          if (length == 1 && this->respiration_waveform_switch_ != nullptr) {
+            bool value = data[0] == 0x01;
+            ESP_LOGD(TAG, "Respiration waveform reporting switch confirmation: %s", value ? "Enabled" : "Disabled");
+            this->respiration_waveform_switch_->publish_state(value);
+          }
+          break;
+        // Handle query responses if needed (e.g., 0x80, 0x8B, 0x8C)
+        case CMD_RESPIRATION_SWITCH_QUERY: // 0x80
+          if (length == 1 && this->respiration_detection_switch_ != nullptr) {
+            bool value = data[0] == 0x01;
+            ESP_LOGD(TAG, "Respiration detection status query response: %s", value ? "Enabled" : "Disabled");
+            this->respiration_detection_switch_->publish_state(value);
+          }
+          break;
+        case CMD_RESPIRATION_LOW_THRESHOLD_QUERY: // 0x8B
+          if (length == 1 && this->respiration_low_threshold_number_ != nullptr) {
+            float value = data[0];
+            ESP_LOGD(TAG, "Respiration low threshold query response: %d", data[0]);
+            this->respiration_low_threshold_number_->publish_state(value);
+          }
+          break;
+        case CMD_RESPIRATION_WAVE_SWITCH_QUERY: // 0x8C
+          if (length == 1 && this->respiration_waveform_switch_ != nullptr) {
+            bool value = data[0] == 0x01;
+            ESP_LOGD(TAG, "Respiration waveform reporting query response: %s", value ? "Enabled" : "Disabled");
+            this->respiration_waveform_switch_->publish_state(value);
+          }
+          break;
         }
         break;
 
@@ -595,6 +625,13 @@ namespace esphome
         switch (command_word)
         {
         // Handle status reports
+        case CMD_SLEEP_SWITCH: // 0x00 - Reply to enable/disable sleep monitoring
+          if (length == 1 && this->sleep_monitoring_switch_ != nullptr) {
+            bool value = data[0] == 0x01;
+            ESP_LOGD(TAG, "Sleep monitoring set confirmation: %s", value ? "Enabled" : "Disabled");
+            this->sleep_monitoring_switch_->publish_state(value);
+          }
+          break;
         case CMD_SLEEP_BED_STATUS_REPORT: // 0x01 - 入床/离床状态
           if (length == 1 && this->bed_status_binary_sensor_ != nullptr)
           {
@@ -612,27 +649,12 @@ namespace esphome
           if (length == 1 && this->sleep_stage_text_sensor_ != nullptr)
           {
             // 0x00:深睡, 0x01:浅睡, 0x02:清醒, 0x03:无(离床时/实时探测模式下上报)
-            std::string stage_str = "未知";
-            switch (data[0])
-            {
-            case 0x00:
-              stage_str = "深睡";
-              break;
-            case 0x01:
-              stage_str = "浅睡";
-              break;
-            case 0x02:
-              stage_str = "清醒";
-              break;
-            case 0x03:
-              stage_str = "无";
-              break;
-            }
+            std::string stage_str = SLEEP_STAGE_INT_TO_ENUM.at(data[0]);
             ESP_LOGD(TAG, "Sleep stage report: %s", stage_str.c_str());
             // Publish state only if it has changed
             if (this->sleep_stage_text_sensor_->state != stage_str)
             {
-              this->sleep_stage_text_sensor_->publish_state(stage_str);
+              this->sleep_stage_text_sensor_->publish_state(stage_str.c_str());
             }
           }
           break;
@@ -661,47 +683,83 @@ namespace esphome
           break;
 
         // Handle command confirmation replies (replies to set commands)
-        case CMD_SLEEP_SWITCH: // 0x00 - Reply to enable/disable sleep monitoring
-          if (length == 1)
-            ESP_LOGD(TAG, "Sleep monitoring set confirmation: %s", data[0] == 0x01 ? "Enabled" : "Disabled");
-          break;
         case CMD_SLEEP_STRUGGLE_SWITCH_SET: // 0x13
-          if (length == 1)
+          if (length == 1 && this->struggle_detection_switch_ != nullptr) {
+            bool value = data[0] == 0x01;
             ESP_LOGD(TAG, "Struggle detection set confirmation: %s", data[0] == 0x01 ? "Enabled" : "Disabled");
+            this->struggle_detection_switch_->publish_state(value);
+          }
           break;
         case CMD_SLEEP_UNATTENDED_SWITCH_SET: // 0x14
-          if (length == 1)
+          if (length == 1 && this->unattended_detection_switch_ != nullptr) {
+            bool value = data[0] == 0x01;
             ESP_LOGD(TAG, "Unattended detection set confirmation: %s", data[0] == 0x01 ? "Enabled" : "Disabled");
+            this->unattended_detection_switch_->publish_state(value);
+          }
           break;
         case CMD_SLEEP_UNATTENDED_TIME_SET: // 0x15
-          if (length == 1)
+          if (length == 1 && this->unattended_time_number_ != nullptr) {
+            float value = data[0];
             ESP_LOGD(TAG, "Unattended time set confirmation: %d minutes", data[0]);
-          // Could update number entity state if implemented
+            this->unattended_time_number_->publish_state(value);
+          }
           break;
         case CMD_SLEEP_END_TIME_SET: // 0x16
-          if (length == 1)
+          if (length == 1 && this->sleep_end_time_number_ != nullptr) {
+            float value = data[0];
             ESP_LOGD(TAG, "Sleep end time set confirmation: %d minutes", data[0]);
-          // Could update number entity state if implemented
+            this->sleep_end_time_number_->publish_state(value);
+          }
           break;
         case CMD_SLEEP_STRUGGLE_SENSITIVITY_SET: // 0x1A
-          if (length == 1)
+          if (length == 1 && this->struggle_sensitivity_select_ != nullptr) {
+            std::string value = STRUGGLE_SENSITIVITY_INT_TO_ENUM.at(data[0]);
             ESP_LOGD(TAG, "Struggle sensitivity set confirmation: %d (0:Low, 1:Medium, 2:High)", data[0]);
-          // Could update select entity state if implemented
+            this->struggle_sensitivity_select_->publish_state(value);
+          }
           break;
         // Handle query responses if needed (e.g., 0x80, 0x93, 0x94, 0x95, 0x96, 0x9A)
         case CMD_SLEEP_SWITCH_QUERY: // 0x80
-          if (length == 1)
+          if (length == 1 && this->sleep_monitoring_switch_ != nullptr) {
+            bool value = data[0] == 0x01;
             ESP_LOGD(TAG, "Sleep monitoring status query response: %s", data[0] == 0x01 ? "Enabled" : "Disabled");
+            this->sleep_monitoring_switch_->publish_state(value);
+          }
+          break;
+        case CMD_SLEEP_STRUGGLE_SWITCH_QUERY: // 0x93
+          if (length == 1 && this->struggle_detection_switch_ != nullptr) {
+            bool value = data[0] == 0x01;
+            ESP_LOGD(TAG, "Struggle detection query response: %s", data[0] == 0x01 ? "Enabled" : "Disabled");
+            this->struggle_detection_switch_->publish_state(value);
+          }
+          break;
+        case CMD_SLEEP_UNATTENDED_SWITCH_QUERY: // 0x94
+          if (length == 1 && this->unattended_detection_switch_ != nullptr) {
+            bool value = data[0] == 0x01;
+            ESP_LOGD(TAG, "Unattended detection query response: %s", data[0] == 0x01 ? "Enabled" : "Disabled");
+            this->unattended_detection_switch_->publish_state(value);
+          }
           break;
         case CMD_SLEEP_UNATTENDED_TIME_QUERY: // 0x95
-          if (length == 1)
+          if (length == 1 && this->unattended_time_number_ != nullptr) {
+            float value = data[0];
             ESP_LOGD(TAG, "Unattended time query response: %d minutes", data[0]);
-          // Could update number entity state if implemented
+            this->unattended_time_number_->publish_state(value);
+          }
+          break;
+        case CMD_SLEEP_END_TIME_QUERY: // 0x96
+          if (length == 1 && this->sleep_end_time_number_ != nullptr) {
+            float value = data[0];
+            ESP_LOGD(TAG, "Sleep end time query response: %d minutes", data[0]);
+            this->sleep_end_time_number_->publish_state(value);
+          }
           break;
         case CMD_SLEEP_STRUGGLE_SENSITIVITY_QUERY: // 0x9A
-          if (length == 1)
+          if (length == 1 && this->struggle_sensitivity_select_ != nullptr) {
+            std::string value = STRUGGLE_SENSITIVITY_INT_TO_ENUM.at(data[0]);
             ESP_LOGD(TAG, "Struggle sensitivity query response: %d (0:Low, 1:Medium, 2:High)", data[0]);
-          // Could update select entity state if implemented
+            this->struggle_sensitivity_select_->publish_state(value);
+          }
           break;
         }
         break;
@@ -753,6 +811,8 @@ namespace esphome
       ESP_LOGD(TAG, "Sent frame: Ctrl=0x%02X, Cmd=0x%02X, Data=[%s]",
                control_word, command_word, format_hex_pretty(data_payload).c_str());
 
+      ESP_LOGD(TAG, "Debug frame: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X ",
+      frame[0], frame[1], frame[2], frame[3], frame[4], frame[5], frame[6], frame[7], frame[8], frame[9]);
       // Optional: Short delay after sending might be needed for some devices
       // delay(50);
     }

@@ -136,10 +136,10 @@ namespace esphome
     };
 
     static const std::map<std::string, uint8_t> SWITCH_ENUM_TO_INT{
-      {"off", SWITCH_OFF}, {"on", SWITCH_ON}};
+      {"OFF", SWITCH_OFF}, {"ON", SWITCH_ON}};
 
     static const std::map<uint8_t, std::string> SWITCH_INT_TO_ENUM{
-      {SWITCH_OFF, "off"}, {SWITCH_ON, "on"}};
+      {SWITCH_OFF, "OFF"}, {SWITCH_ON, "ON"}};
       
     enum StruggleSensitivityStructure : uint8_t {
       STRUGGLE_SENSITIVITY_LOW = 0x00,
@@ -148,15 +148,18 @@ namespace esphome
     };
     
     static const std::map<std::string, uint8_t> STRUGGLE_SENSITIVITY_ENUM_TO_INT{
-      {"low", STRUGGLE_SENSITIVITY_LOW}, {"medium", STRUGGLE_SENSITIVITY_MEDIUM}, {"high", STRUGGLE_SENSITIVITY_HIGH}};
+      {"Low", STRUGGLE_SENSITIVITY_LOW}, {"Medium", STRUGGLE_SENSITIVITY_MEDIUM}, {"High", STRUGGLE_SENSITIVITY_HIGH}};
 
     static const std::map<uint8_t, std::string> STRUGGLE_SENSITIVITY_INT_TO_ENUM{
-      {STRUGGLE_SENSITIVITY_LOW, "low"}, {STRUGGLE_SENSITIVITY_MEDIUM, "medium"}, {STRUGGLE_SENSITIVITY_HIGH, "high"}};
+      {STRUGGLE_SENSITIVITY_LOW, "Low"}, {STRUGGLE_SENSITIVITY_MEDIUM, "Medium"}, {STRUGGLE_SENSITIVITY_HIGH, "High"}};
 
     enum PresenceStructure : uint8_t {
       PRESENCE_NOBODY = 0x00,
       PRESENCE_SOMEBODY = 0x01,
     };
+
+    static const std::map<uint8_t, std::string> PRESENCE_INT_TO_ENUM{
+      {PRESENCE_NOBODY, "Nobody"}, {PRESENCE_SOMEBODY, "Somebody"}};
 
     enum MotionInfoStructure : uint8_t {
       MOTION_INFO_NONE = 0x00,
@@ -164,16 +167,25 @@ namespace esphome
       MOTION_INFO_MOVE = 0x02,
     };
 
+    static const std::map<uint8_t, std::string> MOTION_INFO_INT_TO_ENUM{
+      {MOTION_INFO_NONE, "None"}, {MOTION_INFO_STILL, "Still"}, {MOTION_INFO_MOVE, "Move"}};
+
     enum RespirationInfoStructure : uint8_t {
       RESPIRATION_INFO_NORMAL = 0x00,
       RESPIRATION_INFO_HIGH = 0x01,
-      RESPIRATION_INFO_LOG = 0x02,
+      RESPIRATION_INFO_LOW = 0x02,
     };
+
+    static const std::map<uint8_t, std::string> RESPIRATION_INFO_INT_TO_ENUM{
+      {RESPIRATION_INFO_NORMAL, "Normal"}, {RESPIRATION_INFO_HIGH, "High"}, {RESPIRATION_INFO_LOW, "Low"}};
 
     enum BedStatusStructure : uint8_t {
       BED_STATUS_OUT = 0x00,
       BED_STATUS_IN = 0x01
     };
+
+    static const std::map<uint8_t, std::string> BED_STATUS_INT_TO_ENUM{
+      {BED_STATUS_OUT, "Out"}, {BED_STATUS_IN, "In"}};
 
     enum SleepStageStructure : uint8_t {
       SLEEP_STAGE_DEEP = 0x00,
@@ -181,6 +193,9 @@ namespace esphome
       SLEEP_STAGE_AWAKE = 0x02
     };
     
+    static const std::map<uint8_t, std::string> SLEEP_STAGE_INT_TO_ENUM{
+      {SLEEP_STAGE_DEEP, "Deep"}, {SLEEP_STAGE_LIGHT, "Light"}, {SLEEP_STAGE_AWAKE, "Awake"}};
+
     enum SleepRatingStructure : uint8_t {
       SLEEP_RATING_NONE = 0x00,
       SLEEP_RATING_GOOD = 0x01,
@@ -188,17 +203,26 @@ namespace esphome
       SLEEP_RATING_BAD = 0x03
     };
 
+    static const std::map<uint8_t, std::string> SLEEP_RATING_INT_TO_ENUM{
+      {SLEEP_RATING_NONE, "None"}, {SLEEP_RATING_GOOD, "Good"}, {SLEEP_RATING_MEDIUM, "Medium"}, {SLEEP_RATING_BAD, "Bad"}};
+
     enum StruggleStructure : uint8_t {
       STRUGGLE_NONE = 0x00,
       STRUGGLE_NORMAL = 0x01,
       STRUGGLE_ABNORMAL = 0x02
     };
 
+    static const std::map<uint8_t, std::string> STRUGGLE_INT_TO_ENUM{
+      {STRUGGLE_NONE, "None"}, {STRUGGLE_NORMAL, "Normal"}, {STRUGGLE_ABNORMAL, "Abnormal"}};
+
     enum UnattendedStructure : uint8_t {
       UNATTENDED_NONE = 0x00,
       UNATTENDED_NORMAL = 0x01,
       UNATTENDED_ABNORMAL = 0x02
     };
+
+    static const std::map<uint8_t, std::string> UNATTENDED_INT_TO_ENUM{
+      {UNATTENDED_NONE, "None"}, {UNATTENDED_NORMAL, "Normal"}, {UNATTENDED_ABNORMAL, "Abnormal"}};
 
     // Main Hub Component
     class R60ABD1Component : public Component, public uart::UARTDevice
