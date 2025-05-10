@@ -1,17 +1,17 @@
-title: 毫米波雷达监控 (Radar Monitor)
 path: radar-monitor
 panel: true
 icon: mdi:radar
 badges:
-  - entity: binary_sensor.##RADAR_ENTITY_PREFIX##_presence
+  - entity: binary_sensor.r60abd1_test_presence
     name: 人体
-  - entity: binary_sensor.##RADAR_ENTITY_PREFIX##_bed_status
+  - entity: binary_sensor.r60abd1_test_bed_status
     name: 在床
-  - entity: sensor.##RADAR_ENTITY_PREFIX##_heart_rate
+  - entity: sensor.r60abd1_test_heart_rate
 cards:
+  - type: heading
+    heading: Radar Monitor
   - type: vertical-stack
     cards:
-      # --- 状态概览区 ---
       - type: custom:layout-card
         layout_type: grid
         layout:
@@ -20,32 +20,30 @@ cards:
           margin: 0
         cards:
           - type: glance
-            title: "核心状态 (Core Status)"
+            title: Core Status
             columns: 2
             entities:
-              - entity: binary_sensor.##RADAR_ENTITY_PREFIX##_presence
-                name: "人体存在"
+              - entity: binary_sensor.r60abd1_test_presence
+                name: Presence
                 icon: mdi:account-heart
-              - entity: binary_sensor.##RADAR_ENTITY_PREFIX##_bed_status
-                name: "在床状态"
+              - entity: binary_sensor.r60abd1_test_bed_status
+                name: Bed Status
                 icon: mdi:bed
-              - entity: text_sensor.##RADAR_ENTITY_PREFIX##_motion_text
-                name: "运动状态"
+              - entity: sensor.r60abd1_test_motion_info
+                name: Motion Info
                 icon: mdi:run-fast
-              - entity: text_sensor.##RADAR_ENTITY_PREFIX##_sleep_stage
-                name: "睡眠阶段"
+              - entity: sensor.r60abd1_test_sleep_stage
+                name: Sleep Stage
                 icon: mdi:sleep
           - type: sensor
-            entity: sensor.##RADAR_ENTITY_PREFIX##_distance
-            name: "当前距离 (Current Distance)"
+            entity: sensor.r60abd1_test_distance
+            name: Current Distance
             graph: line
             hours_to_show: 1
             detail: 1
-
-      # --- 心率监测区 (条件显示) ---
       - type: conditional
         conditions:
-          - entity: switch.##RADAR_ENTITY_PREFIX##_heart_rate_detection
+          - entity: switch.r60abd1_test_heart_rate_detection
             state: "on"
         card:
           type: vertical-stack
@@ -53,64 +51,66 @@ cards:
             - type: custom:layout-card
               layout_type: grid
               layout:
-                grid-template-columns: 1fr 1fr
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))
                 grid-gap: 8px
               cards:
                 - type: sensor
-                  entity: sensor.##RADAR_ENTITY_PREFIX##_heart_rate
-                  name: "心率 (Heart Rate)"
+                  entity: sensor.r60abd1_test_heart_rate
+                  name: Heart Rate
                   graph: line
                   hours_to_show: 3
                   detail: 2
-                  line_color: "var(--paper-item-icon-active-color)"
+                  line_color: var(--paper-item-icon-active-color)
                 - type: custom:apexcharts-card
-                  graph_span: 1s
+                  graph_span: 10s
                   header:
                     show: true
-                    title: "心率波形 (Heart Rate Waveform)"
+                    title: Heart Rate Waveform
                     show_states: false
                     colorize_states: true
                   series:
-                    - entity: sensor.##RADAR_ENTITY_PREFIX##_heart_rate_waveform_pt1
-                      name: "点1"
-                      type: line
+                    - entity: sensor.r60abd1_test_heart_rate_waveform_point0
+                      name: Point1
+                      type: column
                       stroke_width: 2
-                      group_by: { func: last, duration: 1s }
-                    - entity: sensor.##RADAR_ENTITY_PREFIX##_heart_rate_waveform_pt2
-                      name: "点2"
-                      type: line
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.r60abd1_test_heart_rate_waveform_point1
+                      name: Point2
+                      type: column
                       stroke_width: 2
-                      group_by: { func: last, duration: 1s }
-                    - entity: sensor.##RADAR_ENTITY_PREFIX##_heart_rate_waveform_pt3
-                      name: "点3"
-                      type: line
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.r60abd1_test_heart_rate_waveform_point2
+                      name: Point3
+                      type: column
                       stroke_width: 2
-                      group_by: { func: last, duration: 1s }
-                    - entity: sensor.##RADAR_ENTITY_PREFIX##_heart_rate_waveform_pt4
-                      name: "点4"
-                      type: line
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.r60abd1_test_heart_rate_waveform_point3
+                      name: Point4
+                      type: column
                       stroke_width: 2
-                      group_by: { func: last, duration: 1s }
-                    - entity: sensor.##RADAR_ENTITY_PREFIX##_heart_rate_waveform_pt5
-                      name: "点5"
-                      type: line
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.r60abd1_test_heart_rate_waveform_point4
+                      name: Point5
+                      type: column
                       stroke_width: 2
-                      group_by: { func: last, duration: 1s }
-                  xaxis:
-                    type: numeric
-                    categories: [0.0, 0.2, 0.4, 0.6, 0.8] # 秒
+                      group_by:
+                        func: last
+                        duration: 1s
                   yaxis:
-                    - min: -128
-                      max: 127
-                      decimalsInFloat: 0
-                      title: { text: "幅度 (Amplitude)" }
-                  chart_type: line
+                    - min: 0
+                      max: 255
                   update_interval: 1sec
-
-      # --- 呼吸监测区 (条件显示) ---
       - type: conditional
         conditions:
-          - entity: switch.##RADAR_ENTITY_PREFIX##_respiration_detection
+          - entity: switch.r60abd1_test_respiration_detection
             state: "on"
         card:
           type: vertical-stack
@@ -118,170 +118,164 @@ cards:
             - type: custom:layout-card
               layout_type: grid
               layout:
-                grid-template-columns: 1fr 1fr
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))
                 grid-gap: 8px
               cards:
                 - type: sensor
-                  entity: sensor.##RADAR_ENTITY_PREFIX##_respiration_rate
-                  name: "呼吸率 (Respiration Rate)"
+                  entity: sensor.r60abd1_test_respiration_rate
+                  name: Respiration Rate
                   graph: line
                   hours_to_show: 3
                   detail: 2
-                  line_color: "var(--primary-color)"
+                  line_color: var(--primary-color)
                 - type: custom:apexcharts-card
-                  graph_span: 1s
+                  graph_span: 10s
                   header:
                     show: true
-                    title: "呼吸波形 (Respiration Waveform)"
+                    title: Respiration Waveform
                     show_states: false
                     colorize_states: true
                   series:
-                    - entity: sensor.##RADAR_ENTITY_PREFIX##_respiration_waveform_pt1
-                      name: "点1"
-                      type: line
+                    - entity: sensor.r60abd1_test_respiration_waveform_point0
+                      name: Point1
+                      type: column
                       stroke_width: 2
-                      group_by: { func: last, duration: 1s }
-                    - entity: sensor.##RADAR_ENTITY_PREFIX##_respiration_waveform_pt2
-                      name: "点2"
-                      type: line
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.r60abd1_test_respiration_waveform_point1
+                      name: Point2
+                      type: column
                       stroke_width: 2
-                      group_by: { func: last, duration: 1s }
-                    - entity: sensor.##RADAR_ENTITY_PREFIX##_respiration_waveform_pt3
-                      name: "点3"
-                      type: line
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.r60abd1_test_respiration_waveform_point2
+                      name: Point3
+                      type: column
                       stroke_width: 2
-                      group_by: { func: last, duration: 1s }
-                    - entity: sensor.##RADAR_ENTITY_PREFIX##_respiration_waveform_pt4
-                      name: "点4"
-                      type: line
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.r60abd1_test_respiration_waveform_point3
+                      name: Point4
+                      type: column
                       stroke_width: 2
-                      group_by: { func: last, duration: 1s }
-                    - entity: sensor.##RADAR_ENTITY_PREFIX##_respiration_waveform_pt5
-                      name: "点5"
-                      type: line
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.r60abd1_test_respiration_waveform_point4
+                      name: Point5
+                      type: column
                       stroke_width: 2
-                      group_by: { func: last, duration: 1s }
-                  xaxis:
-                    type: numeric
-                    categories: [0.0, 0.2, 0.4, 0.6, 0.8] # 秒
+                      group_by:
+                        func: last
+                        duration: 1s
                   yaxis:
-                    - min: -128
-                      max: 127
-                      decimalsInFloat: 0
-                      title: { text: "幅度 (Amplitude)" }
-                  chart_type: line
+                    - min: 0
+                      max: 255
                   update_interval: 1sec
-
-      # --- 睡眠评分 (条件显示) ---
       - type: conditional
         conditions:
-          - entity: switch.##RADAR_ENTITY_PREFIX##_sleep_monitoring
+          - entity: switch.r60abd1_test_sleep_monitoring
             state: "on"
         card:
           type: sensor
-          entity: sensor.##RADAR_ENTITY_PREFIX##_sleep_score
-          name: "睡眠评分 (Sleep Score)"
+          entity: sensor.r60abd1_test_sleep_score
+          name: Sleep Score
           graph: line
           hours_to_show: 24
           detail: 1
-
-      # --- 详细数据区 ---
       - type: entities
-        title: "详细数据 (Detailed Data)"
+        title: Detailed Data
         show_header_toggle: false
         entities:
-          - entity: sensor.##RADAR_ENTITY_PREFIX##_motion_state
-            name: "运动状态码"
-          - entity: sensor.##RADAR_ENTITY_PREFIX##_body_movement
-            name: "体动幅度"
+          - entity: sensor.r60abd1_test_body_movement
+            name: Body Movement
           - type: section
-            label: "位置信息 (Position Info)"
-          - entity: sensor.##RADAR_ENTITY_PREFIX##_position_x
-            name: "位置 X"
-          - entity: sensor.##RADAR_ENTITY_PREFIX##_position_y
-            name: "位置 Y"
-          - entity: sensor.##RADAR_ENTITY_PREFIX##_position_z
-            name: "位置 Z"
+            label: Position Info
+          - entity: sensor.r60abd1_test_position_x
+            name: Position X
+          - entity: sensor.r60abd1_test_position_y
+            name: Position Y
+          - entity: sensor.r60abd1_test_position_z
+            name: Position Z
           - type: section
-            label: "其他信息 (Other Info)"
-          - entity: text_sensor.##RADAR_ENTITY_PREFIX##_respiration_info
-            name: "呼吸信息"
-          - entity: text_sensor.##RADAR_ENTITY_PREFIX##_firmware_version
-            name: "雷达固件版本"
+            label: Other Info
+          - entity: sensor.r60abd1_test_respiration_info
+            name: Respiration Info
+          - entity: sensor.r60abd1_test_firmware_version
+            name: Firmware Version
             icon: mdi:chip
-
-      # --- 功能控制区 ---
       - type: entities
-        title: "功能开关 (Feature Switches)"
+        title: Feature Switches
         show_header_toggle: false
         entities:
-          - entity: switch.##RADAR_ENTITY_PREFIX##_presence_detection
-            name: "人体存在检测"
-          - entity: switch.##RADAR_ENTITY_PREFIX##_heart_rate_detection
-            name: "心率检测"
+          - entity: switch.r60abd1_test_presence_detection
+            name: Presence Detection
+          - entity: switch.r60abd1_test_heart_rate_detection
+            name: Heart Rate Detection
           - type: conditional
             conditions:
-              - entity: switch.##RADAR_ENTITY_PREFIX##_heart_rate_detection
+              - entity: switch.r60abd1_test_heart_rate_detection
                 state: "on"
             row:
-              entity: switch.##RADAR_ENTITY_PREFIX##_heart_rate_waveform
-              name: "心率波形上报"
-          - entity: switch.##RADAR_ENTITY_PREFIX##_respiration_detection
-            name: "呼吸检测"
+              entity: switch.r60abd1_test_heart_rate_waveform
+              name: Heart Rate Waveform
+          - entity: switch.r60abd1_test_respiration_detection
+            name: Respiration Detection
           - type: conditional
             conditions:
-              - entity: switch.##RADAR_ENTITY_PREFIX##_respiration_detection
+              - entity: switch.r60abd1_test_respiration_detection
                 state: "on"
             row:
-              entity: switch.##RADAR_ENTITY_PREFIX##_respiration_waveform
-              name: "呼吸波形上报"
-          - entity: switch.##RADAR_ENTITY_PREFIX##_sleep_monitoring
-            name: "睡眠监测"
+              entity: switch.r60abd1_test_respiration_waveform
+              name: Respiration Waveform
+          - entity: switch.r60abd1_test_sleep_monitoring
+            name: Sleep Monitoring
           - type: conditional
             conditions:
-              - entity: switch.##RADAR_ENTITY_PREFIX##_sleep_monitoring
+              - entity: switch.r60abd1_test_sleep_monitoring
                 state: "on"
             row:
-              entity: switch.##RADAR_ENTITY_PREFIX##_struggle_detection
-              name: "异常挣扎检测"
+              entity: switch.r60abd1_test_struggle_detection
+              name: Struggle Detection
           - type: conditional
             conditions:
-              - entity: switch.##RADAR_ENTITY_PREFIX##_sleep_monitoring # 或者其他相关开关
+              - entity: switch.r60abd1_test_sleep_monitoring
                 state: "on"
             row:
-              entity: switch.##RADAR_ENTITY_PREFIX##_unattended_detection
-              name: "无人计时功能"
-
-      # --- 参数设置区 ---
+              entity: switch.r60abd1_test_unattended_detection
+              name: Unattended Detection
       - type: entities
-        title: "参数设置 (Parameter Settings)"
+        title: Parameter Settings
         show_header_toggle: false
         entities:
           - type: conditional
             conditions:
-              - entity: switch.##RADAR_ENTITY_PREFIX##_respiration_detection
+              - entity: switch.r60abd1_test_respiration_detection
                 state: "on"
             row:
-              entity: number.##RADAR_ENTITY_PREFIX##_respiration_low_threshold
-              name: "呼吸过低阈值 (rpm)"
+              entity: number.r60abd1_test_respiration_low_threshold
+              name: Respiration Low Threshold (rpm)
           - type: conditional
             conditions:
-              - entity: switch.##RADAR_ENTITY_PREFIX##_unattended_detection
+              - entity: switch.r60abd1_test_unattended_detection
                 state: "on"
             row:
-              entity: number.##RADAR_ENTITY_PREFIX##_unattended_time
-              name: "无人计时时长 (分钟)"
+              entity: number.r60abd1_test_unattended_time
+              name: Unattended Time (Min)
           - type: conditional
             conditions:
-              - entity: switch.##RADAR_ENTITY_PREFIX##_sleep_monitoring
+              - entity: switch.r60abd1_test_sleep_monitoring
                 state: "on"
             row:
-              entity: number.##RADAR_ENTITY_PREFIX##_sleep_end_time
-              name: "睡眠截止时长 (分钟)"
+              entity: number.r60abd1_test_sleep_end_time
+              name: Sleep End Time (Min)
           - type: conditional
             conditions:
-              - entity: switch.##RADAR_ENTITY_PREFIX##_struggle_detection
+              - entity: switch.r60abd1_test_struggle_detection
                 state: "on"
             row:
-              entity: select.##RADAR_ENTITY_PREFIX##_struggle_sensitivity
-              name: "挣扎检测灵敏度"
+              entity: select.r60abd1_test_struggle_sensitivity
+              name: Struggle Sensitivity
