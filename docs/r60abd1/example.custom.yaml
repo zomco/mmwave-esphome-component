@@ -1,0 +1,70 @@
+type: custom:r60abd1-dashboard-card
+title: "卧室雷达监控 (Bedroom Radar Monitor)"
+# main_control_entity: switch.your_esphome_device_radar_overall_enable # 可选：总开关控制整个卡片
+
+entities: # 列出所有相关的传感器实体ID
+  # 人在监测区
+  presence: binary_sensor.micradar_sleep_monitor_full_presence
+  motion_text: text_sensor.micradar_sleep_monitor_full_motion_text
+  distance: sensor.micradar_sleep_monitor_full_distance
+  position_x: sensor.micradar_sleep_monitor_full_position_x
+  position_y: sensor.micradar_sleep_monitor_full_position_y
+  position_z: sensor.micradar_sleep_monitor_full_position_z
+
+  # 心率监测区
+  heart_rate: sensor.micradar_sleep_monitor_full_heart_rate
+  heart_rate_wave: # 5个心率波形点实体ID数组
+    - sensor.micradar_sleep_monitor_full_heart_rate_waveform_pt1
+    - sensor.micradar_sleep_monitor_full_heart_rate_waveform_pt2
+    - sensor.micradar_sleep_monitor_full_heart_rate_waveform_pt3
+    - sensor.micradar_sleep_monitor_full_heart_rate_waveform_pt4
+    - sensor.micradar_sleep_monitor_full_heart_rate_waveform_pt5
+
+  # 呼吸监测区
+  respiration_rate: sensor.micradar_sleep_monitor_full_respiration_rate
+  respiration_info: text_sensor.micradar_sleep_monitor_full_respiration_info
+  respiration_wave: # 5个呼吸波形点实体ID数组
+    - sensor.micradar_sleep_monitor_full_respiration_waveform_pt1
+    - sensor.micradar_sleep_monitor_full_respiration_waveform_pt2
+    - sensor.micradar_sleep_monitor_full_respiration_waveform_pt3
+    - sensor.micradar_sleep_monitor_full_respiration_waveform_pt4
+    - sensor.micradar_sleep_monitor_full_respiration_waveform_pt5
+
+  # 睡眠监测区
+  bed_status: binary_sensor.micradar_sleep_monitor_full_bed_status
+  sleep_stage: text_sensor.micradar_sleep_monitor_full_sleep_stage
+  sleep_score: sensor.micradar_sleep_monitor_full_sleep_score
+  body_movement: sensor.micradar_sleep_monitor_full_body_movement
+
+  # 设备信息区
+  firmware_version: text_sensor.micradar_sleep_monitor_full_firmware_version
+
+controls: # 控制各个区域/功能可见性的开关实体ID
+  presence_detection_switch: switch.micradar_sleep_monitor_full_presence_detection
+  heart_rate_detection_switch: switch.micradar_sleep_monitor_full_heart_rate_detection
+  heart_rate_waveform_reporting_switch: switch.micradar_sleep_monitor_full_heart_rate_waveform # 控制心率波形SVG
+  respiration_detection_switch: switch.micradar_sleep_monitor_full_respiration_detection
+  respiration_waveform_reporting_switch: switch.micradar_sleep_monitor_full_respiration_waveform # 控制呼吸波形SVG
+  sleep_monitoring_switch: switch.micradar_sleep_monitor_full_sleep_monitoring
+
+waveform_options: # 全局或特定波形图的SVG样式选项
+  default_waveform_options: # 所有波形图的默认设置
+    svg_width: 300           # 默认SVG宽度
+    svg_height: 120          # 默认SVG高度
+    # y_min 和 y_max 将由数据动态确定，除非在此处或特定波形中覆盖
+    y_axis_decimals: 1       # Y轴标签小数位数
+    time_step: 0.2           # X轴每个点的时间间隔 (秒)
+    point_radius: 2          # 波形图上数据点半径
+    show_points: false       # 全局是否显示数据点
+    stroke_width: 1.5        # 全局波形线条宽度
+  heart_rate: # 特定于心率波形图的选项 (会覆盖默认值)
+    line_color: "tomato"
+    y_min: -0.5              # 心率波形Y轴固定范围 (mm)
+    y_max: 1.0               # 心率波形Y轴固定范围 (mm)
+    show_points: true
+    y_axis_decimals: 2       # 心率用2位小数
+  respiration: # 特定于呼吸波形图的选项
+    line_color: "steelblue"
+    y_min: -100              # 呼吸波形Y轴固定范围 (raw amplitude units)
+    y_max: 100               # 呼吸波形Y轴固定范围 (raw amplitude units)
+    y_axis_decimals: 0       # 呼吸用0位小数
