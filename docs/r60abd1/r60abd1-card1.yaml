@@ -1,0 +1,281 @@
+path: radar-monitor
+panel: true
+icon: mdi:radar
+badges:
+  - entity: binary_sensor.r60abd1_test_presence
+    name: 人体
+  - entity: binary_sensor.r60abd1_test_bed_status
+    name: 在床
+  - entity: sensor.r60abd1_test_heart_rate
+cards:
+  - type: heading
+    heading: Radar Monitor
+  - type: vertical-stack
+    cards:
+      - type: custom:layout-card
+        layout_type: grid
+        layout:
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))
+          grid-gap: 16px
+          margin: 0
+        cards:
+          - type: glance
+            title: Core Status
+            columns: 2
+            entities:
+              - entity: binary_sensor.r60abd1_test_presence
+                name: Presence
+                icon: mdi:account-heart
+              - entity: binary_sensor.r60abd1_test_bed_status
+                name: Bed Status
+                icon: mdi:bed
+              - entity: sensor.r60abd1_test_motion_info
+                name: Motion Info
+                icon: mdi:run-fast
+              - entity: sensor.r60abd1_test_sleep_stage
+                name: Sleep Stage
+                icon: mdi:sleep
+          - type: sensor
+            entity: sensor.r60abd1_test_distance
+            name: Current Distance
+            graph: line
+            hours_to_show: 1
+            detail: 1
+      - type: conditional
+        conditions:
+          - entity: switch.r60abd1_test_heart_rate_detection
+            state: "on"
+        card:
+          type: vertical-stack
+          cards:
+            - type: custom:layout-card
+              layout_type: grid
+              layout:
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))
+                grid-gap: 8px
+              cards:
+                - type: sensor
+                  entity: sensor.r60abd1_test_heart_rate
+                  name: Heart Rate
+                  graph: line
+                  hours_to_show: 3
+                  detail: 2
+                  line_color: var(--paper-item-icon-active-color)
+                - type: custom:apexcharts-card
+                  graph_span: 10s
+                  header:
+                    show: true
+                    title: Heart Rate Waveform
+                    show_states: false
+                    colorize_states: true
+                  series:
+                    - entity: sensor.r60abd1_test_heart_rate_waveform_point0
+                      name: Point1
+                      type: column
+                      stroke_width: 2
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.r60abd1_test_heart_rate_waveform_point1
+                      name: Point2
+                      type: column
+                      stroke_width: 2
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.r60abd1_test_heart_rate_waveform_point2
+                      name: Point3
+                      type: column
+                      stroke_width: 2
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.r60abd1_test_heart_rate_waveform_point3
+                      name: Point4
+                      type: column
+                      stroke_width: 2
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.r60abd1_test_heart_rate_waveform_point4
+                      name: Point5
+                      type: column
+                      stroke_width: 2
+                      group_by:
+                        func: last
+                        duration: 1s
+                  yaxis:
+                    - min: 0
+                      max: 255
+                  update_interval: 1sec
+      - type: conditional
+        conditions:
+          - entity: switch.r60abd1_test_respiration_detection
+            state: "on"
+        card:
+          type: vertical-stack
+          cards:
+            - type: custom:layout-card
+              layout_type: grid
+              layout:
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))
+                grid-gap: 8px
+              cards:
+                - type: sensor
+                  entity: sensor.r60abd1_test_respiration_rate
+                  name: Respiration Rate
+                  graph: line
+                  hours_to_show: 3
+                  detail: 2
+                  line_color: var(--primary-color)
+                - type: custom:apexcharts-card
+                  graph_span: 10s
+                  header:
+                    show: true
+                    title: Respiration Waveform
+                    show_states: false
+                    colorize_states: true
+                  series:
+                    - entity: sensor.r60abd1_test_respiration_waveform_point0
+                      name: Point1
+                      type: column
+                      stroke_width: 2
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.r60abd1_test_respiration_waveform_point1
+                      name: Point2
+                      type: column
+                      stroke_width: 2
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.r60abd1_test_respiration_waveform_point2
+                      name: Point3
+                      type: column
+                      stroke_width: 2
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.r60abd1_test_respiration_waveform_point3
+                      name: Point4
+                      type: column
+                      stroke_width: 2
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.r60abd1_test_respiration_waveform_point4
+                      name: Point5
+                      type: column
+                      stroke_width: 2
+                      group_by:
+                        func: last
+                        duration: 1s
+                  yaxis:
+                    - min: 0
+                      max: 255
+                  update_interval: 1sec
+      - type: conditional
+        conditions:
+          - entity: switch.r60abd1_test_sleep_monitoring
+            state: "on"
+        card:
+          type: sensor
+          entity: sensor.r60abd1_test_sleep_score
+          name: Sleep Score
+          graph: line
+          hours_to_show: 24
+          detail: 1
+      - type: entities
+        title: Detailed Data
+        show_header_toggle: false
+        entities:
+          - entity: sensor.r60abd1_test_body_movement
+            name: Body Movement
+          - type: section
+            label: Position Info
+          - entity: sensor.r60abd1_test_position_x
+            name: Position X
+          - entity: sensor.r60abd1_test_position_y
+            name: Position Y
+          - entity: sensor.r60abd1_test_position_z
+            name: Position Z
+          - type: section
+            label: Other Info
+          - entity: sensor.r60abd1_test_respiration_info
+            name: Respiration Info
+          - entity: sensor.r60abd1_test_firmware_version
+            name: Firmware Version
+            icon: mdi:chip
+      - type: entities
+        title: Feature Switches
+        show_header_toggle: false
+        entities:
+          - entity: switch.r60abd1_test_presence_detection
+            name: Presence Detection
+          - entity: switch.r60abd1_test_heart_rate_detection
+            name: Heart Rate Detection
+          - type: conditional
+            conditions:
+              - entity: switch.r60abd1_test_heart_rate_detection
+                state: "on"
+            row:
+              entity: switch.r60abd1_test_heart_rate_waveform
+              name: Heart Rate Waveform
+          - entity: switch.r60abd1_test_respiration_detection
+            name: Respiration Detection
+          - type: conditional
+            conditions:
+              - entity: switch.r60abd1_test_respiration_detection
+                state: "on"
+            row:
+              entity: switch.r60abd1_test_respiration_waveform
+              name: Respiration Waveform
+          - entity: switch.r60abd1_test_sleep_monitoring
+            name: Sleep Monitoring
+          - type: conditional
+            conditions:
+              - entity: switch.r60abd1_test_sleep_monitoring
+                state: "on"
+            row:
+              entity: switch.r60abd1_test_struggle_detection
+              name: Struggle Detection
+          - type: conditional
+            conditions:
+              - entity: switch.r60abd1_test_sleep_monitoring
+                state: "on"
+            row:
+              entity: switch.r60abd1_test_unattended_detection
+              name: Unattended Detection
+      - type: entities
+        title: Parameter Settings
+        show_header_toggle: false
+        entities:
+          - type: conditional
+            conditions:
+              - entity: switch.r60abd1_test_respiration_detection
+                state: "on"
+            row:
+              entity: number.r60abd1_test_respiration_low_threshold
+              name: Respiration Low Threshold (rpm)
+          - type: conditional
+            conditions:
+              - entity: switch.r60abd1_test_unattended_detection
+                state: "on"
+            row:
+              entity: number.r60abd1_test_unattended_time
+              name: Unattended Time (Min)
+          - type: conditional
+            conditions:
+              - entity: switch.r60abd1_test_sleep_monitoring
+                state: "on"
+            row:
+              entity: number.r60abd1_test_sleep_end_time
+              name: Sleep End Time (Min)
+          - type: conditional
+            conditions:
+              - entity: switch.r60abd1_test_struggle_detection
+                state: "on"
+            row:
+              entity: select.r60abd1_test_struggle_sensitivity
+              name: Struggle Sensitivity
