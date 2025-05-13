@@ -28,16 +28,16 @@ CONF_SLEEP_SCORE = "sleep_score"
 CONF_POSITION_X = "position_x"
 CONF_POSITION_Y = "position_y"
 CONF_POSITION_Z = "position_z"
-CONF_HEART_RATE_WAVE_0 = "heart_rate_wave_0"
-CONF_HEART_RATE_WAVE_1 = "heart_rate_wave_1"
-CONF_HEART_RATE_WAVE_2 = "heart_rate_wave_2"
-CONF_HEART_RATE_WAVE_3 = "heart_rate_wave_3"
-CONF_HEART_RATE_WAVE_4 = "heart_rate_wave_4"
-CONF_RESPIRATION_RATE_WAVE_0 = "respiration_rate_wave_0"
-CONF_RESPIRATION_RATE_WAVE_1 = "respiration_rate_wave_1"
-CONF_RESPIRATION_RATE_WAVE_2 = "respiration_rate_wave_2"
-CONF_RESPIRATION_RATE_WAVE_3 = "respiration_rate_wave_3"
-CONF_RESPIRATION_RATE_WAVE_4 = "respiration_rate_wave_4"
+CONF_HEART_RATE_WAVEFORM_PT0 = "heart_rate_waveform_pt0"
+CONF_HEART_RATE_WAVEFORM_PT1 = "heart_rate_waveform_pt1"
+CONF_HEART_RATE_WAVEFORM_PT2 = "heart_rate_waveform_pt2"
+CONF_HEART_RATE_WAVEFORM_PT3 = "heart_rate_waveform_pt3"
+CONF_HEART_RATE_WAVEFORM_PT4 = "heart_rate_waveform_pt4"
+CONF_RESPIRATION_WAVEFORM_PT0 = "respiration_waveform_pt0"
+CONF_RESPIRATION_WAVEFORM_PT1 = "respiration_waveform_pt1"
+CONF_RESPIRATION_WAVEFORM_PT2 = "respiration_waveform_pt2"
+CONF_RESPIRATION_WAVEFORM_PT3 = "respiration_waveform_pt3"
+CONF_RESPIRATION_WAVEFORM_PT4 = "respiration_waveform_pt4"
 
 
 # Configuration schema for individual sensors
@@ -102,72 +102,72 @@ CONFIG_SCHEMA = cv.Schema(
             device_class=DEVICE_CLASS_DISTANCE,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
-        cv.Optional(CONF_HEART_RATE_WAVE_0): sensor.sensor_schema(
+        cv.Optional(CONF_HEART_RATE_WAVEFORM_PT0): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
             icon="mdi:sine-wave",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
-        cv.Optional(CONF_HEART_RATE_WAVE_1): sensor.sensor_schema(
+        cv.Optional(CONF_HEART_RATE_WAVEFORM_PT1): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
             icon="mdi:sine-wave",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
-        cv.Optional(CONF_HEART_RATE_WAVE_2): sensor.sensor_schema(
+        cv.Optional(CONF_HEART_RATE_WAVEFORM_PT2): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
             icon="mdi:sine-wave",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
-        cv.Optional(CONF_HEART_RATE_WAVE_3): sensor.sensor_schema(
+        cv.Optional(CONF_HEART_RATE_WAVEFORM_PT3): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
             icon="mdi:sine-wave",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
-        cv.Optional(CONF_HEART_RATE_WAVE_4): sensor.sensor_schema(
+        cv.Optional(CONF_HEART_RATE_WAVEFORM_PT4): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
             icon="mdi:sine-wave",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
-        cv.Optional(CONF_RESPIRATION_RATE_WAVE_0): sensor.sensor_schema(
+        cv.Optional(CONF_RESPIRATION_WAVEFORM_PT0): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
             icon="mdi:sine-wave",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
-        cv.Optional(CONF_RESPIRATION_RATE_WAVE_1): sensor.sensor_schema(
+        cv.Optional(CONF_RESPIRATION_WAVEFORM_PT1): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
             icon="mdi:sine-wave",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
-        cv.Optional(CONF_RESPIRATION_RATE_WAVE_2): sensor.sensor_schema(
+        cv.Optional(CONF_RESPIRATION_WAVEFORM_PT2): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
             icon="mdi:sine-wave",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
-        cv.Optional(CONF_RESPIRATION_RATE_WAVE_3): sensor.sensor_schema(
+        cv.Optional(CONF_RESPIRATION_WAVEFORM_PT3): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
             icon="mdi:sine-wave",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
-        cv.Optional(CONF_RESPIRATION_RATE_WAVE_4): sensor.sensor_schema(
+        cv.Optional(CONF_RESPIRATION_WAVEFORM_PT4): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
-            icon="mdi:lungs",
+            icon="mdi:sine-wave",
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
@@ -212,43 +212,43 @@ async def to_code(config):
         sens = await sensor.new_sensor(position_z)
         cg.add(r60abd1_component.set_position_z_sensor(sens))
 
-    if heart_rate_wave_0 := config.get(CONF_HEART_RATE_WAVE_0):
-        sens = await sensor.new_sensor(heart_rate_wave_0)
-        cg.add(r60abd1_component.set_heart_rate_wave_0_sensor(sens))
+    if heart_rate_waveform_pt0 := config.get(CONF_HEART_RATE_WAVEFORM_PT0):
+        sens = await sensor.new_sensor(heart_rate_waveform_pt0)
+        cg.add(r60abd1_component.set_heart_rate_waveform_pt0_sensor(sens))
 
-    if heart_rate_wave_1 := config.get(CONF_HEART_RATE_WAVE_1):
-        sens = await sensor.new_sensor(heart_rate_wave_1)
-        cg.add(r60abd1_component.set_heart_rate_wave_1_sensor(sens))
+    if heart_rate_waveform_pt1 := config.get(CONF_HEART_RATE_WAVEFORM_PT1):
+        sens = await sensor.new_sensor(heart_rate_waveform_pt1)
+        cg.add(r60abd1_component.set_heart_rate_waveform_pt1_sensor(sens))
 
-    if heart_rate_wave_2 := config.get(CONF_HEART_RATE_WAVE_2):
-        sens = await sensor.new_sensor(heart_rate_wave_2)
-        cg.add(r60abd1_component.set_heart_rate_wave_2_sensor(sens))
+    if heart_rate_waveform_pt2 := config.get(CONF_HEART_RATE_WAVEFORM_PT2):
+        sens = await sensor.new_sensor(heart_rate_waveform_pt2)
+        cg.add(r60abd1_component.set_heart_rate_waveform_pt2_sensor(sens))
 
-    if heart_rate_wave_3 := config.get(CONF_HEART_RATE_WAVE_3):
-        sens = await sensor.new_sensor(heart_rate_wave_3)
-        cg.add(r60abd1_component.set_heart_rate_wave_3_sensor(sens))
+    if heart_rate_waveform_pt3 := config.get(CONF_HEART_RATE_WAVEFORM_PT3):
+        sens = await sensor.new_sensor(heart_rate_waveform_pt3)
+        cg.add(r60abd1_component.set_heart_rate_waveform_pt3_sensor(sens))
 
-    if heart_rate_wave_4 := config.get(CONF_HEART_RATE_WAVE_4):
-        sens = await sensor.new_sensor(heart_rate_wave_4)
-        cg.add(r60abd1_component.set_heart_rate_wave_4_sensor(sens))
+    if heart_rate_waveform_pt4 := config.get(CONF_HEART_RATE_WAVEFORM_PT4):
+        sens = await sensor.new_sensor(heart_rate_waveform_pt4)
+        cg.add(r60abd1_component.set_heart_rate_waveform_pt4_sensor(sens))
 
-    if respiration_rate_wave_0 := config.get(CONF_RESPIRATION_RATE_WAVE_0):
-        sens = await sensor.new_sensor(respiration_rate_wave_0)
-        cg.add(r60abd1_component.set_respiration_rate_wave_0_sensor(sens))
+    if respiration_waveform_pt0 := config.get(CONF_RESPIRATION_WAVEFORM_PT0):
+        sens = await sensor.new_sensor(respiration_waveform_pt0)
+        cg.add(r60abd1_component.set_respiration_waveform_pt0_sensor(sens))
 
-    if respiration_rate_wave_1 := config.get(CONF_RESPIRATION_RATE_WAVE_1):
-        sens = await sensor.new_sensor(respiration_rate_wave_1)
-        cg.add(r60abd1_component.set_respiration_rate_wave_1_sensor(sens))
+    if respiration_waveform_pt1 := config.get(CONF_RESPIRATION_WAVEFORM_PT1):
+        sens = await sensor.new_sensor(respiration_waveform_pt1)
+        cg.add(r60abd1_component.set_respiration_waveform_pt1_sensor(sens))
 
-    if respiration_rate_wave_2 := config.get(CONF_RESPIRATION_RATE_WAVE_2):
-        sens = await sensor.new_sensor(respiration_rate_wave_2)
-        cg.add(r60abd1_component.set_respiration_rate_wave_2_sensor(sens))
+    if respiration_waveform_pt2 := config.get(CONF_RESPIRATION_WAVEFORM_PT2):
+        sens = await sensor.new_sensor(respiration_waveform_pt2)
+        cg.add(r60abd1_component.set_respiration_waveform_pt2_sensor(sens))
 
-    if respiration_rate_wave_3 := config.get(CONF_RESPIRATION_RATE_WAVE_3):
-        sens = await sensor.new_sensor(respiration_rate_wave_3)
-        cg.add(r60abd1_component.set_respiration_rate_wave_3_sensor(sens))
+    if respiration_waveform_pt3 := config.get(CONF_RESPIRATION_WAVEFORM_PT3):
+        sens = await sensor.new_sensor(respiration_waveform_pt3)
+        cg.add(r60abd1_component.set_respiration_waveform_pt3_sensor(sens))
 
-    if respiration_rate_wave_4 := config.get(CONF_RESPIRATION_RATE_WAVE_4):
-        sens = await sensor.new_sensor(respiration_rate_wave_4)
-        cg.add(r60abd1_component.set_respiration_rate_wave_4_sensor(sens))
+    if respiration_waveform_pt4 := config.get(CONF_RESPIRATION_WAVEFORM_PT4):
+        sens = await sensor.new_sensor(respiration_waveform_pt4)
+        cg.add(r60abd1_component.set_respiration_waveform_pt4_sensor(sens))
 

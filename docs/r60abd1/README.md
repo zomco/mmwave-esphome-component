@@ -13,71 +13,44 @@ R60ABD1 does not have wireless communication capabilities, so if you want R60ABD
 ![Wiring Diagram](./wiring_diagram.png).
 
 ## Installation
-In this guide, we provide an example.yaml file that can be directly imported into HomeAssistant:
+
+### Basic(recommended)
+
+### Advanced
+In this guide, we provide some sample configuration that help you customize the R60ABD1. Replace **##REPLACE_NAME##** with your device name in the configuration and follow the [installation instructions](https://esphome.io/guides/getting_started_hassio).:
 
 ```yaml
-
 esphome:
-  name: mmwave
-  friendly_name: mmwave
-  # Automatically add the mac address to the name
-  # so you can use a single firmware for all devices
-  name_add_mac_suffix: true
-    # This will allow for project identification,
-  # configuration and updates.
-  project:
-    name: zomco.mmwave
-    version: dev # This will be replaced by the github workflows with the `release` version
-
-# To be able to get logs from the device via serial and api.
-logger:
-
-# API is a requirement of the dashboard import.
-api:
-
-# OTA is required for Over-the-Air updating
-ota:
-  - platform: esphome
-
-wifi:
-  # Set up a wifi access point using the device name above
-  ap:
-
-# In combination with the `ap` this allows the user
-# to provision wifi credentials to the device.
-captive_portal:
-
-# Sets up Bluetooth LE (Only on ESP32) to allow the user
-# to provision wifi credentials to the device.
-esp32_improv:
-  authorizer: none
-
-# Sets up the improv via serial client for Wi-Fi provisioning.
-# Handy if your device has a usb port for the user to add credentials when they first get it.
-improv_serial:
-
-# This should point to the public location of the yaml file that will be adopted.
-# In this case it is the core yaml file that does not contain the extra things
-# that are provided by this factory yaml file as the user does not need these once adopted.
-dashboard_import:
-  package_import_url: github://zomco/mmwave-esphome-component/mmwave-common.yaml@main
-  
-external_components:
-  # Include the r60abd1 component
-  - source: https://github.com/zomco/mmwave-esphome-component
-    component: r60abd1
+  name: ##REPLACE_NAME##
 
 esp32:
   board: esp32-s3-devkitc-1
   framework:
     type: esp-idf
 
+# Enable logging
+logger:
+  hardware_uart: UART0
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+captive_portal:
+
+external_components:
+  - source:
+      type: git
+      path: https://github.com/zomco/mmwave-esphome-component
+    components: [r60abd1]
+  
 # Configure the UART bus
 uart:
   id: uart_bus
-  tx_pin: GPIO13
-  rx_pin: GPIO14
+  tx_pin: GPIO14
+  rx_pin: GPIO13
   baud_rate: 115200
+  debug:
 
 # Configure the component hub
 r60abd1:
@@ -87,123 +60,390 @@ r60abd1:
 # Configure Sensors
 sensor:
   - platform: r60abd1 
-    id: radar_hub 
     distance:
-      name: "Distance" # Home Assistant 中显示的名称
-      # unit_of_measurement, icon 等在 sensor.py 中定义
-      # 如果需要，可以在此处覆盖它们，例如：
-      # icon: "mdi:map-marker-radius"
-    motion_state:
-      name: "Motion State" # 0:无, 1:静止, 2:活跃
+      name: "Distance"
     body_movement:
-      name: "Body Movement" # 0-100
+      name: "Body Movement"
     heart_rate:
-      name: "Heart Rate" # bpm
-      filters:
-        - range:
-            min: 30.0
-            max: 200.0
+      name: "Heart Rate"
     respiration_rate:
-      name: "Respiration Rate" # rpm
-      filters:
-        - range:
-            min: 1.0
-            max: 50.0
+      name: "Respiration Rate"
     sleep_score:
-      name: "Sleep Score" # 0-100
+      name: "Sleep Score"
     position_x:
-      name: "Position X" # cm
+      name: "Position X"
     position_y:
-      name: "Position Y" # cm
+      name: "Position Y"
     position_z:
-      name: "Position Z" # cm
-    heart_rate_wave_0:
-      name: "Heart Rate Wave 0" # 心率波形数据
-    heart_rate_wave_1:
-      name: "Heart Rate Wave 1" # 心率波形数据
-    heart_rate_wave_2:
-      name: "Heart Rate Wave 2" # 心率波形数据
-    heart_rate_wave_3:
-      name: "Heart Rate Wave 3" # 心率波形数据
-    heart_rate_wave_4:
-      name: "Heart Rate Wave 4" # 心率波形数据
-    respiration_wave_0:
-      name: "Respiration Wave 0" # 呼吸波形数据
-    respiration_wave_1:
-      name: "Respiration Wave 1" # 呼吸波形数据
-    respiration_wave_2:
-      name: "Respiration Wave 2" # 呼吸波形数据
-    respiration_wave_3:
-      name: "Respiration Wave 3" # 呼吸波形数据
-    respiration_wave_4:
-      name: "Respiration Wave 4" # 呼吸波形数据
+      name: "Position Z"
+    heart_rate_waveform_pt0:
+      name: "Heart Rate Waveform Point0"
+    heart_rate_waveform_pt1:
+      name: "Heart Rate Waveform Point1"
+    heart_rate_waveform_pt2:
+      name: "Heart Rate Waveform Point2"
+    heart_rate_waveform_pt3:
+      name: "Heart Rate Waveform Point3"
+    heart_rate_waveform_pt4:
+      name: "Heart Rate Waveform Point4"
+    respiration_waveform_pt0:
+      name: "Respiration Waveform Point0"
+    respiration_waveform_pt1:
+      name: "Respiration Waveform Point1"
+    respiration_waveform_pt2:
+      name: "Respiration Waveform Point2"
+    respiration_waveform_pt3:
+      name: "Respiration Waveform Point3"
+    respiration_waveform_pt4:
+      name: "Respiration Waveform Point4"
 
 # Configure Binary Sensors
 binary_sensor:
   - platform: r60abd1
-    id: radar_hub # 链接到核心
     presence:
-      name: "Presence" # true: 有人, false: 无人
+      name: "Presence"
     bed_status:
-      name: "Bed Status" # true: 在床, false: 离床
+      name: "Bed Status"
 
 # Configure Text Sensors
 text_sensor:
   - platform: r60abd1
-    id: radar_hub # 链接到核心
-    motion_text:
-      name: "Motion Text" # 无, 静止, 活跃
+    motion_info:
+      name: "Motion Info"
     respiration_info:
-      name: "Respiration Info" # 正常, 过高, 过低, 无
+      name: "Respiration Info"
     sleep_stage:
-      name: "Sleep Stage" # 深睡, 浅睡, 清醒, 无
+      name: "Sleep Stage"
     firmware_version:
-      name: "Firmware Version" # 显示雷达的固件版本号
+      name: "Firmware Version"
     sleep_rating:
-      name: "Sleep Rating" # 显示睡眠评分
+      name: "Sleep Rating"
 
 # --- Configure Control Entities ---
 
 # Configure Switches
 switch:
   - platform: r60abd1
-    id: radar_hub # 链接到核心
-    presence_detection: # 对应 switch.py 中的 key
-      name: "Presence Detection" # 设置是否启用 Presence Detection
+    presence_detection:
+      name: "Presence Detection"
     heart_rate_detection:
-      name: "Heart Rate Detection" # 设置是否启用 Heart Rate Detection
+      name: "Heart Rate Detection"
     respiration_detection:
-      name: "Respiration Detection" # 设置是否启用 Respiration Detection
+      name: "Respiration Detection"
     sleep_monitoring:
-      name: "Sleep Monitoring" # 设置是否启用 Sleep Monitoring
+      name: "Sleep Monitoring"
     heart_rate_waveform:
-      name: "Heart Rate Waveform" # 设置是否启用 Heart Rate Waveform
+      name: "Heart Rate Waveform"
     respiration_waveform:
-      name: "Respiration Waveform" # 设置是否启用 Respiration Waveform
+      name: "Respiration Waveform"
     struggle_detection:
-      name: "Struggle Detection" # 设置是否启用 Struggle Detection
+      name: "Struggle Detection"
     unattended_detection:
-      name: "Unattended Detection" # 设置是否启用 Unattended Detection
+      name: "Unattended Detection"
 
 # Configure Numbers
 number:
   - platform: r60abd1
-    id: radar_hub # 链接到核心
-    respiration_low_threshold: # 对应 number.py 中的 key
-      name: "Respiration Low Threshold" # 设置呼吸率低于多少时报告“过低”
-      # min/max/step 在 number.py 中定义 (10-20 rpm, step 1)
+    respiration_low_threshold:
+      name: "Respiration Low Threshold"
     unattended_time:
-      name: "Unattended Time" # 设置无人多久后触发“无人计时异常”
-      # min/max/step 在 number.py 中定义 (30-180 min, step 10)
+      name: "Unattended Time"
     sleep_end_time:
-      name: "Sleep End Time" # 设置离床多久后判断睡眠结束
-      # min/max/step 在 number.py 中定义 (5-120 min, step 1)
+      name: "Sleep End Time"
 
 # Configure Selects
 select:
   - platform: r60abd1
-    id: radar_hub # 链接到核心
-    struggle_sensitivity: # 对应 select.py 中的 key
-      name: "Stuggle Sensitivity" # 设置异常挣扎检测的灵敏度
-      # options 在 select.py 中定义 (Low, Medium, High)
+    struggle_sensitivity:
+      name: "Struggle Sensitivity"
+
 ```
+
+## Configuration
+After installation, the new device can be added to HomeAssistant. You may need to add the new device to dashboard to view the data, we also provide some sample configuration:
+
+```yaml
+path: radar-monitor
+panel: true
+icon: mdi:radar
+badges:
+  - entity: binary_sensor.##REPLACE_NAME##_presence
+    name: Presence
+  - entity: binary_sensor.##REPLACE_NAME##_bed_status
+    name: Bed Status
+  - entity: sensor.##REPLACE_NAME##_heart_rate
+cards:
+  - type: heading
+    heading: Radar Monitor
+  - type: vertical-stack
+    cards:
+      - type: custom:layout-card
+        layout_type: grid
+        layout:
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))
+          grid-gap: 16px
+          margin: 0
+        cards:
+          - type: glance
+            title: Core Status
+            columns: 2
+            entities:
+              - entity: binary_sensor.##REPLACE_NAME##_presence
+                name: Presence
+                icon: mdi:account-heart
+              - entity: binary_sensor.##REPLACE_NAME##_bed_status
+                name: Bed Status
+                icon: mdi:bed
+              - entity: sensor.##REPLACE_NAME##_motion_info
+                name: Motion Info
+                icon: mdi:run-fast
+              - entity: sensor.##REPLACE_NAME##_sleep_stage
+                name: Sleep Stage
+                icon: mdi:sleep
+          - type: sensor
+            entity: sensor.##REPLACE_NAME##_distance
+            name: Current Distance
+            graph: line
+            hours_to_show: 1
+            detail: 1
+      - type: conditional
+        conditions:
+          - entity: switch.##REPLACE_NAME##_heart_rate_detection
+            state: "on"
+        card:
+          type: vertical-stack
+          cards:
+            - type: custom:layout-card
+              layout_type: grid
+              layout:
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))
+                grid-gap: 8px
+              cards:
+                - type: sensor
+                  entity: sensor.##REPLACE_NAME##_heart_rate
+                  name: Heart Rate
+                  graph: line
+                  hours_to_show: 3
+                  detail: 2
+                  line_color: var(--paper-item-icon-active-color)
+                - type: custom:apexcharts-card
+                  graph_span: 10s
+                  header:
+                    show: true
+                    title: Heart Rate Waveform
+                    show_states: false
+                    colorize_states: true
+                  series:
+                    - entity: sensor.##REPLACE_NAME##_heart_rate_waveform_point0
+                      name: Point1
+                      type: column
+                      stroke_width: 2
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.##REPLACE_NAME##_heart_rate_waveform_point1
+                      name: Point2
+                      type: column
+                      stroke_width: 2
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.##REPLACE_NAME##_heart_rate_waveform_point2
+                      name: Point3
+                      type: column
+                      stroke_width: 2
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.##REPLACE_NAME##_heart_rate_waveform_point3
+                      name: Point4
+                      type: column
+                      stroke_width: 2
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.##REPLACE_NAME##_heart_rate_waveform_point4
+                      name: Point5
+                      type: column
+                      stroke_width: 2
+                      group_by:
+                        func: last
+                        duration: 1s
+                  yaxis:
+                    - min: 0
+                      max: 255
+                  update_interval: 1sec
+      - type: conditional
+        conditions:
+          - entity: switch.##REPLACE_NAME##_respiration_detection
+            state: "on"
+        card:
+          type: vertical-stack
+          cards:
+            - type: custom:layout-card
+              layout_type: grid
+              layout:
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))
+                grid-gap: 8px
+              cards:
+                - type: sensor
+                  entity: sensor.##REPLACE_NAME##_respiration_rate
+                  name: Respiration Rate
+                  graph: line
+                  hours_to_show: 3
+                  detail: 2
+                  line_color: var(--primary-color)
+                - type: custom:apexcharts-card
+                  graph_span: 10s
+                  header:
+                    show: true
+                    title: Respiration Waveform
+                    show_states: false
+                    colorize_states: true
+                  series:
+                    - entity: sensor.##REPLACE_NAME##_respiration_waveform_point0
+                      name: Point1
+                      type: column
+                      stroke_width: 2
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.##REPLACE_NAME##_respiration_waveform_point1
+                      name: Point2
+                      type: column
+                      stroke_width: 2
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.##REPLACE_NAME##_respiration_waveform_point2
+                      name: Point3
+                      type: column
+                      stroke_width: 2
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.##REPLACE_NAME##_respiration_waveform_point3
+                      name: Point4
+                      type: column
+                      stroke_width: 2
+                      group_by:
+                        func: last
+                        duration: 1s
+                    - entity: sensor.##REPLACE_NAME##_respiration_waveform_point4
+                      name: Point5
+                      type: column
+                      stroke_width: 2
+                      group_by:
+                        func: last
+                        duration: 1s
+                  yaxis:
+                    - min: 0
+                      max: 255
+                  update_interval: 1sec
+      - type: conditional
+        conditions:
+          - entity: switch.##REPLACE_NAME##_sleep_monitoring
+            state: "on"
+        card:
+          type: sensor
+          entity: sensor.##REPLACE_NAME##_sleep_score
+          name: Sleep Score
+          graph: line
+          hours_to_show: 24
+          detail: 1
+      - type: entities
+        title: Detailed Data
+        show_header_toggle: false
+        entities:
+          - entity: sensor.##REPLACE_NAME##_body_movement
+            name: Body Movement
+          - type: section
+            label: Position Info
+          - entity: sensor.##REPLACE_NAME##_position_x
+            name: Position X
+          - entity: sensor.##REPLACE_NAME##_position_y
+            name: Position Y
+          - entity: sensor.##REPLACE_NAME##_position_z
+            name: Position Z
+          - type: section
+            label: Other Info
+          - entity: sensor.##REPLACE_NAME##_respiration_info
+            name: Respiration Info
+          - entity: sensor.##REPLACE_NAME##_firmware_version
+            name: Firmware Version
+            icon: mdi:chip
+      - type: entities
+        title: Feature Switches
+        show_header_toggle: false
+        entities:
+          - entity: switch.##REPLACE_NAME##_presence_detection
+            name: Presence Detection
+          - entity: switch.##REPLACE_NAME##_heart_rate_detection
+            name: Heart Rate Detection
+          - type: conditional
+            conditions:
+              - entity: switch.##REPLACE_NAME##_heart_rate_detection
+                state: "on"
+            row:
+              entity: switch.##REPLACE_NAME##_heart_rate_waveform
+              name: Heart Rate Waveform
+          - entity: switch.##REPLACE_NAME##_respiration_detection
+            name: Respiration Detection
+          - type: conditional
+            conditions:
+              - entity: switch.##REPLACE_NAME##_respiration_detection
+                state: "on"
+            row:
+              entity: switch.##REPLACE_NAME##_respiration_waveform
+              name: Respiration Waveform
+          - entity: switch.##REPLACE_NAME##_sleep_monitoring
+            name: Sleep Monitoring
+          - type: conditional
+            conditions:
+              - entity: switch.##REPLACE_NAME##_sleep_monitoring
+                state: "on"
+            row:
+              entity: switch.##REPLACE_NAME##_struggle_detection
+              name: Struggle Detection
+          - type: conditional
+            conditions:
+              - entity: switch.##REPLACE_NAME##_sleep_monitoring
+                state: "on"
+            row:
+              entity: switch.##REPLACE_NAME##_unattended_detection
+              name: Unattended Detection
+      - type: entities
+        title: Parameter Settings
+        show_header_toggle: false
+        entities:
+          - type: conditional
+            conditions:
+              - entity: switch.##REPLACE_NAME##_respiration_detection
+                state: "on"
+            row:
+              entity: number.##REPLACE_NAME##_respiration_low_threshold
+              name: Respiration Low Threshold (rpm)
+          - type: conditional
+            conditions:
+              - entity: switch.##REPLACE_NAME##_unattended_detection
+                state: "on"
+            row:
+              entity: number.##REPLACE_NAME##_unattended_time
+              name: Unattended Time (Min)
+          - type: conditional
+            conditions:
+              - entity: switch.##REPLACE_NAME##_sleep_monitoring
+                state: "on"
+            row:
+              entity: number.##REPLACE_NAME##_sleep_end_time
+              name: Sleep End Time (Min)
+          - type: conditional
+            conditions:
+              - entity: switch.##REPLACE_NAME##_struggle_detection
+                state: "on"
+            row:
+              entity: select.##REPLACE_NAME##_struggle_sensitivity
+              name: Struggle Sensitivity
+```
+
+## More

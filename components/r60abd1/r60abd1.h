@@ -78,12 +78,12 @@ namespace esphome
     // Command Words for Heart Rate (0x85) (协议文档 Page 12-13)
     const uint8_t CMD_HEART_RATE_SWITCH = 0x00;            // 开关心率监测功能
     const uint8_t CMD_HEART_RATE_VALUE_REPORT = 0x02;      // 心率数值上报 (60-120 bpm)
-    const uint8_t CMD_HEART_RATE_WAVE_REPORT = 0x05;       // 心率波形上报 (5 bytes)
-    const uint8_t CMD_HEART_RATE_WAVE_SWITCH = 0x0A;       // 心率波形上报开关设置
+    const uint8_t CMD_HEART_RATE_WAVEFORM_REPORT = 0x05;       // 心率波形上报 (5 bytes)
+    const uint8_t CMD_HEART_RATE_WAVEFORM_SWITCH = 0x0A;       // 心率波形上报开关设置
     const uint8_t CMD_HEART_RATE_SWITCH_QUERY = 0x80;      // 查询心率监测开关状态
     const uint8_t CMD_HEART_RATE_VALUE_QUERY = 0x82;       // 查询心率数值
-    const uint8_t CMD_HEART_RATE_WAVE_QUERY = 0x85;        // 查询心率波形
-    const uint8_t CMD_HEART_RATE_WAVE_SWITCH_QUERY = 0x8A; // 查询心率波形上报开关状态
+    const uint8_t CMD_HEART_RATE_WAVEFORM_QUERY = 0x85;        // 查询心率波形
+    const uint8_t CMD_HEART_RATE_WAVEFORM_SWITCH_QUERY = 0x8A; // 查询心率波形上报开关状态
 
     // Command Words for Respiration (0x81) (协议文档 Page 13-14)
     const uint8_t CMD_RESPIRATION_SWITCH = 0x00;              // 开关呼吸监测功能
@@ -252,16 +252,16 @@ namespace esphome
       SUB_SENSOR(position_x);
       SUB_SENSOR(position_y);
       SUB_SENSOR(position_z);
-      SUB_SENSOR(heart_rate_wave_0);
-      SUB_SENSOR(heart_rate_wave_1);
-      SUB_SENSOR(heart_rate_wave_2);
-      SUB_SENSOR(heart_rate_wave_3);
-      SUB_SENSOR(heart_rate_wave_4);
-      SUB_SENSOR(respiration_rate_wave_0);
-      SUB_SENSOR(respiration_rate_wave_1);
-      SUB_SENSOR(respiration_rate_wave_2);
-      SUB_SENSOR(respiration_rate_wave_3);
-      SUB_SENSOR(respiration_rate_wave_4);
+      SUB_SENSOR(heart_rate_waveform_pt0);
+      SUB_SENSOR(heart_rate_waveform_pt1);
+      SUB_SENSOR(heart_rate_waveform_pt2);
+      SUB_SENSOR(heart_rate_waveform_pt3);
+      SUB_SENSOR(heart_rate_waveform_pt4);
+      SUB_SENSOR(respiration_waveform_pt0);
+      SUB_SENSOR(respiration_waveform_pt1);
+      SUB_SENSOR(respiration_waveform_pt2);
+      SUB_SENSOR(respiration_waveform_pt3);
+      SUB_SENSOR(respiration_waveform_pt4);
       #endif
 
       #ifdef USE_SELECT

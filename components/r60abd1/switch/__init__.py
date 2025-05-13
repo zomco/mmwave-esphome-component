@@ -15,7 +15,7 @@ CONF_PRESENCE_DETECTION = "presence_detection"
 CONF_HEART_RATE_DETECTION = "heart_rate_detection"
 CONF_RESPIRATION_DETECTION = "respiration_detection"
 CONF_SLEEP_MONITORING = "sleep_monitoring"
-CONF_HEART_RATE_WAVEFORM = "heart_rate_waveform"
+CONF_HEART_RATE_WAVEFORMFORM = "heart_rate_waveform"
 CONF_RESPIRATION_WAVEFORM = "respiration_waveform"
 CONF_STRUGGLE_DETECTION = "struggle_detection"
 CONF_UNATTENDED_DETECTION = "unattended_detection"
@@ -46,7 +46,7 @@ CONFIG_SCHEMA = cv.Schema(
             icon="mdi:bed",
             entity_category=ENTITY_CATEGORY_CONFIG,
         ),
-        cv.Optional(CONF_HEART_RATE_WAVEFORM): switch.switch_schema(
+        cv.Optional(CONF_HEART_RATE_WAVEFORMFORM): switch.switch_schema(
             r60abd1_ns.class_("HeartRateWaveformSwitch", switch.Switch),
             icon="mdi:chart-bell-curve-cumulative",
             entity_category=ENTITY_CATEGORY_CONFIG,
@@ -94,7 +94,7 @@ async def to_code(config):
         await cg.register_parented(s, config[CONF_R60ABD1_ID])
         cg.add(r60abd1_component.set_sleep_monitoring_switch(s))
 
-    if heart_rate_waveform := config.get(CONF_HEART_RATE_WAVEFORM):
+    if heart_rate_waveform := config.get(CONF_HEART_RATE_WAVEFORMFORM):
         s = await switch.new_switch(heart_rate_waveform)
         await cg.register_parented(s, config[CONF_R60ABD1_ID])
         cg.add(r60abd1_component.set_heart_rate_waveform_switch(s))

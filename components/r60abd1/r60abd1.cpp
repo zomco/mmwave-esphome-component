@@ -29,7 +29,7 @@ namespace esphome
 
         this->send_command(CTRL_PRESENCE, CMD_PRESENCE_SWITCH_QUERY, {0x0F}); 
         this->send_command(CTRL_HEART_RATE, CMD_HEART_RATE_SWITCH_QUERY, {0x0F});
-        this->send_command(CTRL_HEART_RATE, CMD_HEART_RATE_WAVE_SWITCH_QUERY, {0x0F});
+        this->send_command(CTRL_HEART_RATE, CMD_HEART_RATE_WAVEFORM_SWITCH_QUERY, {0x0F});
         this->send_command(CTRL_RESPIRATION, CMD_RESPIRATION_SWITCH_QUERY, {0x0F});
         this->send_command(CTRL_RESPIRATION, CMD_RESPIRATION_WAVE_SWITCH_QUERY, {0x0F});
         this->send_command(CTRL_SLEEP_MONITOR, CMD_SLEEP_SWITCH_QUERY, {0x0F});
@@ -71,17 +71,17 @@ namespace esphome
       LOG_SENSOR("  ", "Position Y Sensor", this->position_y_sensor_);
       LOG_SENSOR("  ", "Position Z Sensor", this->position_z_sensor_);
       LOG_SENSOR("  ", "Heart Rate Sensor", this->heart_rate_sensor_);
-      LOG_SENSOR("  ", "Heart Rate Wave 0 Sensor", this->heart_rate_wave_0_sensor_);
-      LOG_SENSOR("  ", "Heart Rate Wave 1 Sensor", this->heart_rate_wave_1_sensor_);
-      LOG_SENSOR("  ", "Heart Rate Wave 2 Sensor", this->heart_rate_wave_2_sensor_);
-      LOG_SENSOR("  ", "Heart Rate Wave 3 Sensor", this->heart_rate_wave_3_sensor_);
-      LOG_SENSOR("  ", "Heart Rate Wave 4 Sensor", this->heart_rate_wave_4_sensor_);
+      LOG_SENSOR("  ", "Heart Rate Waveform Point 0 Sensor", this->heart_rate_waveform_pt0_sensor_);
+      LOG_SENSOR("  ", "Heart Rate Waveform Point 1 Sensor", this->heart_rate_waveform_pt1_sensor_);
+      LOG_SENSOR("  ", "Heart Rate Waveform Point 2 Sensor", this->heart_rate_waveform_pt2_sensor_);
+      LOG_SENSOR("  ", "Heart Rate Waveform Point 3 Sensor", this->heart_rate_waveform_pt3_sensor_);
+      LOG_SENSOR("  ", "Heart Rate Waveform Point 4 Sensor", this->heart_rate_waveform_pt4_sensor_);
       LOG_SENSOR("  ", "Respiration Rate Sensor", this->respiration_rate_sensor_);
-      LOG_SENSOR("  ", "Respiration Rate Wave 0 Sensor", this->respiration_rate_wave_0_sensor_);
-      LOG_SENSOR("  ", "Respiration Rate Wave 1 Sensor", this->respiration_rate_wave_1_sensor_);
-      LOG_SENSOR("  ", "Respiration Rate Wave 2 Sensor", this->respiration_rate_wave_2_sensor_);
-      LOG_SENSOR("  ", "Respiration Rate Wave 3 Sensor", this->respiration_rate_wave_3_sensor_);
-      LOG_SENSOR("  ", "Respiration Rate Wave 4 Sensor", this->respiration_rate_wave_4_sensor_);
+      LOG_SENSOR("  ", "Respiration Waveform Point 0 Sensor", this->respiration_waveform_pt0_sensor_);
+      LOG_SENSOR("  ", "Respiration Waveform Point 1 Sensor", this->respiration_waveform_pt1_sensor_);
+      LOG_SENSOR("  ", "Respiration Waveform Point 2 Sensor", this->respiration_waveform_pt2_sensor_);
+      LOG_SENSOR("  ", "Respiration Waveform Point 3 Sensor", this->respiration_waveform_pt3_sensor_);
+      LOG_SENSOR("  ", "Respiration Waveform Point 4 Sensor", this->respiration_waveform_pt4_sensor_);
       #endif
 
       #ifdef USE_TEXT_SENSOR
@@ -461,35 +461,35 @@ namespace esphome
             }
           }
           break;
-        case CMD_HEART_RATE_WAVE_REPORT: // 0x05
+        case CMD_HEART_RATE_WAVEFORM_REPORT: // 0x05
           ESP_LOGV(TAG, "Heart rate waveform data received (ignored).");
           if (length == 5)
           {
             ESP_LOGD(TAG, "Heart rate waveform report: %02X %02X %02X %02X %02X",
                      data[0], data[1], data[2], data[3], data[4]);
-            if (this->heart_rate_wave_0_sensor_ != nullptr)
+            if (this->heart_rate_waveform_pt0_sensor_ != nullptr)
             {
-              this->heart_rate_wave_0_sensor_->publish_state(data[0]);
+              this->heart_rate_waveform_pt0_sensor_->publish_state(data[0]);
             }
-            if (this->heart_rate_wave_1_sensor_ != nullptr)
+            if (this->heart_rate_waveform_pt1_sensor_ != nullptr)
             {
-              this->heart_rate_wave_1_sensor_->publish_state(data[1]);
+              this->heart_rate_waveform_pt1_sensor_->publish_state(data[1]);
             }
-            if (this->heart_rate_wave_2_sensor_ != nullptr)
+            if (this->heart_rate_waveform_pt2_sensor_ != nullptr)
             {
-              this->heart_rate_wave_2_sensor_->publish_state(data[2]);
+              this->heart_rate_waveform_pt2_sensor_->publish_state(data[2]);
             }
-            if (this->heart_rate_wave_3_sensor_ != nullptr)
+            if (this->heart_rate_waveform_pt3_sensor_ != nullptr)
             {
-              this->heart_rate_wave_3_sensor_->publish_state(data[3]);
+              this->heart_rate_waveform_pt3_sensor_->publish_state(data[3]);
             }
-            if (this->heart_rate_wave_4_sensor_ != nullptr)
+            if (this->heart_rate_waveform_pt4_sensor_ != nullptr)
             {
-              this->heart_rate_wave_4_sensor_->publish_state(data[4]);
+              this->heart_rate_waveform_pt4_sensor_->publish_state(data[4]);
             }
           }
           break;
-        case CMD_HEART_RATE_WAVE_SWITCH: // 0x0A
+        case CMD_HEART_RATE_WAVEFORM_SWITCH: // 0x0A
           if (length == 1 && this->heart_rate_waveform_switch_ != nullptr) {
             bool value = data[0] == 0x01;
             ESP_LOGD(TAG, "Heart rate waveform switch confirmation: %s", value ? "Enabled" : "Disabled");
@@ -504,7 +504,7 @@ namespace esphome
             this->heart_rate_detection_switch_->publish_state(value);
           }
           break;
-        case CMD_HEART_RATE_WAVE_SWITCH_QUERY: // 0x8A
+        case CMD_HEART_RATE_WAVEFORM_SWITCH_QUERY: // 0x8A
           if (length == 1 && this->heart_rate_waveform_switch_ != nullptr) {
             bool value = data[0] == 0x01;
             ESP_LOGD(TAG, "Heart rate waveform reporting query response: %s", value ? "Enabled" : "Disabled");
@@ -560,25 +560,25 @@ namespace esphome
           {
             ESP_LOGD(TAG, "Respiration waveform report: %02X %02X %02X %02X %02X",
                      data[0], data[1], data[2], data[3], data[4]);
-            if (this->respiration_rate_wave_0_sensor_ != nullptr)
+            if (this->respiration_waveform_pt0_sensor_ != nullptr)
             {
-              this->respiration_rate_wave_0_sensor_->publish_state(data[0]);
+              this->respiration_waveform_pt0_sensor_->publish_state(data[0]);
             }
-            if (this->respiration_rate_wave_1_sensor_ != nullptr)
+            if (this->respiration_waveform_pt1_sensor_ != nullptr)
             {
-              this->respiration_rate_wave_1_sensor_->publish_state(data[1]);
+              this->respiration_waveform_pt1_sensor_->publish_state(data[1]);
             }
-            if (this->respiration_rate_wave_2_sensor_ != nullptr)
+            if (this->respiration_waveform_pt2_sensor_ != nullptr)
             {
-              this->respiration_rate_wave_2_sensor_->publish_state(data[2]);
+              this->respiration_waveform_pt2_sensor_->publish_state(data[2]);
             }
-            if (this->respiration_rate_wave_3_sensor_ != nullptr)
+            if (this->respiration_waveform_pt3_sensor_ != nullptr)
             {
-              this->respiration_rate_wave_3_sensor_->publish_state(data[3]);
+              this->respiration_waveform_pt3_sensor_->publish_state(data[3]);
             }
-            if (this->respiration_rate_wave_4_sensor_ != nullptr)
+            if (this->respiration_waveform_pt4_sensor_ != nullptr)
             {
-              this->respiration_rate_wave_4_sensor_->publish_state(data[4]);
+              this->respiration_waveform_pt4_sensor_->publish_state(data[4]);
             }
           }
           break;
@@ -847,7 +847,7 @@ namespace esphome
     void R60ABD1Component::set_heart_rate_waveform(bool enable)
     {
       ESP_LOGD(TAG, "Setting heart rate waveform reporting: %s", enable ? "ON" : "OFF");
-      this->send_command(CTRL_HEART_RATE, CMD_HEART_RATE_WAVE_SWITCH, {enable ? (uint8_t)0x01 : (uint8_t)0x00});
+      this->send_command(CTRL_HEART_RATE, CMD_HEART_RATE_WAVEFORM_SWITCH, {enable ? (uint8_t)0x01 : (uint8_t)0x00});
     }
 
     void R60ABD1Component::set_respiration_waveform(bool enable)
