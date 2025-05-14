@@ -13,8 +13,8 @@ jobs:
     uses: esphome/workflows/.github/workflows/build.yml@2025.4.0
     with:
       files: |
-        r60abd1-esp32s3.factory.yaml
-      esphome-version: 2024.12.2
+        mmwave-r60abd1-esp32s3.factory.yaml
+      esphome-version: 2025.4.0
       combined-name: mmwave
 
       release-summary: ${{ github.event.release.body }}

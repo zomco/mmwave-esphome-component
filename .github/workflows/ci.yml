@@ -21,10 +21,13 @@ jobs:
       max-parallel: 3
       matrix:
         file:
-          - r60abd1-esp32s3
+          - mmwave-r60abd1-esp32s3
 
         esphome-version:
           - stable
+          - beta
+          - dev
+  
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4.2.2

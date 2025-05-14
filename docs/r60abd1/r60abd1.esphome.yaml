@@ -102,15 +102,15 @@ binary_sensor:
 text_sensor:
   - platform: r60abd1
     motion_info:
-      name: "Motion Info" # 无, 静止, 活跃
+      name: "Motion Info"
     respiration_info:
-      name: "Respiration Info" # 正常, 过高, 过低, 无
+      name: "Respiration Info"
     sleep_stage:
-      name: "Sleep Stage" # 深睡, 浅睡, 清醒, 无
+      name: "Sleep Stage"
     firmware_version:
-      name: "Firmware Version" # 显示雷达的固件版本号
+      name: "Firmware Version"
     sleep_rating:
-      name: "Sleep Rating" # 显示睡眠评分
+      name: "Sleep Rating"
 
 # --- Configure Control Entities ---
 
@@ -138,14 +138,11 @@ switch:
 number:
   - platform: r60abd1
     respiration_low_threshold:
-      name: "Respiration Low Threshold" # 设置呼吸率低于多少时报告“过低”
-      # min/max/step 在 number.py 中定义 (10-20 rpm, step 1)
+      name: "Respiration Low Threshold"
     unattended_time:
-      name: "Unattended Time" # 设置无人多久后触发“无人计时异常”
-      # min/max/step 在 number.py 中定义 (30-180 min, step 10)
+      name: "Unattended Time"
     sleep_end_time:
-      name: "Sleep End Time" # 设置离床多久后判断睡眠结束
-      # min/max/step 在 number.py 中定义 (5-120 min, step 1)
+      name: "Sleep End Time"
 
 # Configure Selects
 select:

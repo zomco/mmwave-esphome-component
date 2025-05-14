@@ -28,14 +28,6 @@ esp32:
   framework:
     type: esp-idf
 
-# Enable logging
-logger:
-  hardware_uart: UART0
-
-wifi:
-  ssid: !secret wifi_ssid
-  password: !secret wifi_password
-
 captive_portal:
 
 external_components:
@@ -160,7 +152,7 @@ select:
 ```
 
 ## Configuration
-After installation, the new device can be added to HomeAssistant. You may need to add the new device to dashboard to view the data, we also provide some sample configuration:
+After installation, the new device can be added to HomeAssistant. You may need to add the new device to dashboard to view the data, we also provide some sample configuration. To use the sample configuration, [layout-card](https://github.com/thomasloven/lovelace-layout-card) and [apexcharts-card](https://github.com/RomRider/apexcharts-card) are required.
 
 ```yaml
 path: radar-monitor
@@ -445,5 +437,8 @@ cards:
               entity: select.##REPLACE_NAME##_struggle_sensitivity
               name: Struggle Sensitivity
 ```
+
+![](./card1.jpg)
+![](./card2.jpg)
 
 ## More
