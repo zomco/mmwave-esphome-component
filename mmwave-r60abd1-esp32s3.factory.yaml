@@ -1,4 +1,4 @@
-pacakages:
+packages:
   core: !include mmwave-r60abd1-esp32s3.yaml
 
 esphome:
