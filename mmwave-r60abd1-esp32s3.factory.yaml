@@ -2,13 +2,14 @@ pacakage:
   core: !include mmwave-r60abd1-esp32s3.yaml
 
 esphome:
+  name: mmwave-r60abd1
   project:
     name: zomco.mmwave-r60abd1
     version: dev
 
 dashboard_import:
   package_import_url: github://zomco/mmwave-esphome-component/mmwave-r60abd1-esp32s3.yaml@main
-  
+
 # Configure the UART bus
 uart:
   id: uart_bus
