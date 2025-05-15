@@ -1,8 +1,7 @@
-pacakage:
+pacakages:
   core: !include mmwave-r60abd1-esp32s3.yaml
 
 esphome:
-  name: mmwave-r60abd1
   project:
     name: zomco.mmwave-r60abd1
     version: dev
