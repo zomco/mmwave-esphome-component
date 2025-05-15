@@ -45,4 +45,4 @@ esp32:
     type: esp-idf
 
 dashboard_import:
-  pacakage_import_url: github://zomco/mmwave-esphome-component/mmwave-r60abd1-esp32s3.yaml@main
+  package_import_url: github://zomco/mmwave-esphome-component/mmwave-r60abd1-esp32s3.yaml@main
