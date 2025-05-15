@@ -38,3 +38,11 @@ external_components:
   # Include the r60abd1 component
   - source: https://github.com/zomco/mmwave-esphome-component
     component: [r60abd1]
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+
+dashboard_import:
+  pacakage_import_url: github://zomco/mmwave-esphome-component/mmwave-r60abd1-esp32s3.yaml@main
