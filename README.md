@@ -1,5 +1,5 @@
 # mmwave-esphome-component
-
+[![CI](https://github.com/zomco/mmwave-esphome-component/actions/workflows/ci.yml/badge.svg)](https://github.com/zomco/mmwave-esphome-component/actions/workflows/ci.yml)
 
 
 ## Support Modules
