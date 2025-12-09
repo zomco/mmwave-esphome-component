@@ -31,7 +31,7 @@ jobs:
   
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v6.0.0
+        uses: actions/checkout@v6.0.1
       - name: ESPHome Stable
         uses: esphome/build-action@v7.1.0
         with:
