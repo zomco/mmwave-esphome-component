@@ -9,38 +9,24 @@ R60ABD1 does not have wireless communication capabilities, so if you want R60ABD
 * [R60ABD1](https://www.micradar.cn/), with firmware version G60SM1SYv010204. Follow flashing instructions in [Flash Guide](./flash_guide.pdf) and flash [/docs/r60abd1/firmware_G60SM1SYv010204.bin](./firmware_G60SM1SYv010204.bin) into R60ABD1.
 * [HomeAssistant](https://www.home-assistant.io/), latest version is recommended.
 * [ESPHome](https://esphome.io/), latest version is recommended.
-* [ESP32/ESP32-S3/ESP32-S2/ESP32-C3](https://www.espressif.com/), ESP32-S3 is recommended. In this guide, we will use ESP32-S3: **GPIO14 (ESP32-S3 RX) to R60ABD1 TX**, **GPIO15 (ESP32-S3 TX) to R60ABD1 RX**. The wiring diagram could be:
+* [ESP32-S3](https://www.espressif.com/), ESP32-S3 is recommended. In this guide, we will use ESP32-S3: **GPIO14 (ESP32-S3 RX) to R60ABD1 TX**, **GPIO15 (ESP32-S3 TX) to R60ABD1 RX**. The wiring diagram could be:
 ![Wiring Diagram](./wiring_diagram.png).
 
 ## Installation
 
-### Basic(recommended)
-
-### Advanced
-In this guide, we provide some sample configuration that help you customize the R60ABD1. Replace **##REPLACE_NAME##** with your device name in the configuration and follow the [installation instructions](https://esphome.io/guides/getting_started_hassio).:
-
+### Basic Configruation
 ```yaml
-esphome:
-  name: ##REPLACE_NAME##
-
-esp32:
-  board: esp32-s3-devkitc-1
-  framework:
-    type: esp-idf
-
-captive_portal:
-
 external_components:
   - source:
       type: git
-      path: https://github.com/zomco/mmwave-esphome-component
+      path: https://github.com/zomco/mmwave-esphome
     components: [r60abd1]
-  
+
 # Configure the UART bus
 uart:
   id: uart_bus
-  tx_pin: GPIO14
-  rx_pin: GPIO13
+  tx_pin: GPIO43
+  rx_pin: GPIO44
   baud_rate: 115200
   debug:
 
@@ -48,7 +34,12 @@ uart:
 r60abd1:
   id: radar_hub
   uart_id: uart_bus
+```
 
+### Usage
+In this guide, we provide some sample configuration that help you customize the R60ABD1. Replace **##REPLACE_NAME##** with your device name in the configuration and follow the [installation instructions](https://esphome.io/guides/getting_started_hassio).:
+
+```yaml
 # Configure Sensors
 sensor:
   - platform: r60abd1 
