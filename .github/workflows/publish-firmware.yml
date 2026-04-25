@@ -1,31 +1,135 @@
 name: Publish Firmware
 
+# Runs on push to main, on a new release, or manually.
+# Builds firmware for every radar model in tests/, then deploys a GitHub Pages
+# site with ESP Web Tools so users can flash directly from their browser.
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
   release:
     types: [published]
+  workflow_dispatch:
 
-permissions:
-  contents: write
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build-firmware:
-    name: Build Firmware
-    uses: esphome/workflows/.github/workflows/build.yml@2025.10.0
-    with:
-      files: |
-        mmwave-r60abd1-esp32s3.factory.yaml
-      esphome-version: 2025.4.0
-      combined-name: mmwave
+  # ── Step 1: enumerate all radar model YAML configs ────────────────────────
+  discover:
+    name: Discover radar models
+    runs-on: ubuntu-latest
+    outputs:
+      configs: ${{ steps.list.outputs.configs }}
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
 
-      release-summary: ${{ github.event.release.body }}
-      release-url: ${{ github.event.release.html_url }}
-      release-version: ${{ github.event.release.tag_name }}
+      - name: List test YAML files
+        id: list
+        run: |
+          configs=$(find tests -name "*.yaml" | sort \
+            | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "configs=$configs" >> "$GITHUB_OUTPUT"
+          echo "Found configurations: $configs"
 
-  upload-to-release:
-    name: Upload to Release
-    uses: esphome/workflows/.github/workflows/upload-to-gh-release.yml@2025.10.0
-    needs:
-      - build-firmware
-    with:
-      version: ${{ github.event.release.tag_name }}
+  # ── Step 2: build firmware for each radar model in parallel ───────────────
+  build:
+    name: Build ${{ matrix.config }}
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config: ${{ fromJson(needs.discover.outputs.configs) }}
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Build ESPHome firmware
+        id: build
+        uses: esphome/build-action@v6
+        with:
+          yaml-file: ${{ matrix.config }}
+          complete-manifest: "true"         # produce a ready-to-use manifest.json
+          release-summary: ${{ github.event.release.body }}
+          release-url: ${{ github.event.release.html_url }}
+
+      # Upload the entire build output folder as a named artifact.
+      # Folder name is the build-action `name` output, e.g. "r60abd1-ESP32-C3".
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ steps.build.outputs.name }}
+          path: ${{ steps.build.outputs.name }}/
+          if-no-files-found: error
+
+  # ── Step 3: assemble the GitHub Pages site and deploy ─────────────────────
+  deploy:
+    name: Deploy GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      # Download every firmware-* artifact into firmware/{artifact-name}/
+      - name: Download all firmware artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: firmware-*
+          path: firmware/
+          merge-multiple: false
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+
+          # Copy static assets (index.html, CSS, etc.)
+          cp -r static/. _site/
+
+          # Copy each firmware folder into the site root.
+          # artifact dirs: firmware/firmware-{name}/  →  _site/{name}/
+          for artifact_dir in firmware/firmware-*/; do
+            artifact_name=$(basename "$artifact_dir")          # firmware-r60abd1-ESP32-C3
+            model_id="${artifact_name#firmware-}"              # r60abd1-ESP32-C3
+            dest="_site/$model_id"
+            mkdir -p "$dest"
+            cp -r "$artifact_dir"/* "$dest/"
+            echo "Copied $artifact_name → $dest"
+          done
+
+          # Generate models.json consumed by the install page JS.
+          # Each entry: { id, name, version, manifest }
+          (
+            for model_dir in _site/*/; do
+              manifest="$model_dir/manifest.json"
+              [ -f "$manifest" ] || continue
+              model_id=$(basename "$model_dir")
+              jq \
+                --arg id  "$model_id" \
+                --arg mp  "$model_id/manifest.json" \
+                '{id: $id, name: .name, version: .version, manifest: $mp}' \
+                "$manifest"
+            done
+          ) | jq -s '.' > _site/models.json
+
+          echo "models.json:"
+          cat _site/models.json
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site/
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4

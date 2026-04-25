@@ -1,0 +1,195 @@
+# ═══════════════════════════════════════════════════════════════
+# R60ABD1 ESPHome 完整配置示例
+# ═══════════════════════════════════════════════════════════════
+#
+# 文件结构:
+#   /config/esphome/r60abd1.yaml          ← 本文件
+#   /config/esphome/components/r60abd1/   ← 组件目录
+#     __init__.py
+#     r60abd1.h
+#     r60abd1.cpp
+#     r60abd1_transform.h
+
+esphome:
+  name: r60abd1-radar
+  friendly_name: "R60ABD1 雷达"
+
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: arduino
+
+# ── 外部组件（本地路径） ──────────────────────────────────────────────────────
+external_components:
+  - source:
+      type: local
+      path: components   # 相对于本 yaml 文件的路径
+
+# ── 基础配置 ──────────────────────────────────────────────────────────────────
+logger:
+  level: DEBUG   # 调试阶段用 DEBUG，生产改为 INFO
+
+api:
+  encryption:
+    key: "your-api-key-here"
+
+ota:
+  platform: esphome
+  password: "your-ota-password"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+# ── UART（R60ABD1 波特率固定 115200，8N1） ────────────────────────────────────
+uart:
+  id: uart_r60abd1
+  tx_pin: GPIO21   # ESP32-C3 → R60ABD1 TXD（交叉接线）
+  rx_pin: GPIO20   # ESP32-C3 ← R60ABD1 RXD
+  baud_rate: 115200
+  data_bits: 8
+  parity: NONE
+  stop_bits: 1
+
+# ── R60ABD1 组件 ──────────────────────────────────────────────────────────────
+r60abd1:
+  id: radar
+  uart_id: uart_r60abd1
+
+  # ── 校准参数 ────────────────────────────────────────────────────────────────
+  # 安装位置：以房间左下角为原点，X 向右，Y 向前（cm）
+  radar_x: 200.0        # 雷达距左墙 200cm
+  radar_y: 175.0        # 雷达距后墙 175cm（房间中线）
+  radar_height: 220.0   # 距地面安装高度（cm）
+
+  # 安装姿态（度）
+  # yaw:   水平朝向偏差（雷达正前方相对房间 Y 轴，顺时针为正）
+  # pitch: 俯仰（向前倾为正，水平安装=0）
+  # roll:  横滚（向右倾为正，水平安装=0）
+  yaw:   0.0    # 由校准卡片自动计算后填写
+  pitch: 0.0    # 有 IMU 时从传感器读取；无 IMU 时手动填写
+  roll:  0.0
+
+  # 房间边界多边形（房间坐标系 cm，< 3 点时不过滤）
+  # 由校准卡片绘制后导出填写
+  polygon:
+    - { x:   0, y:   0 }
+    - { x: 400, y:   0 }
+    - { x: 400, y: 350 }
+    - { x:   0, y: 350 }
+
+  # ── 存在与运动传感器 ────────────────────────────────────────────────────────
+  presence:
+    name: "存在检测"
+    device_class: presence
+
+  motion_state:
+    name: "运动状态"
+    # 0=无人, 1=静止, 2=活跃
+
+  body_movement:
+    name: "体动幅度"
+
+  body_distance:
+    name: "目标距离"
+    unit_of_measurement: cm
+
+  # ── 原始坐标（调试用，生产可注释掉） ─────────────────────────────────────
+  raw_x:
+    name: "原始 X"
+    internal: true
+  raw_y:
+    name: "原始 Y"
+    internal: true
+  raw_z:
+    name: "原始 Z"
+    internal: true
+
+  # ── 变换后的房间坐标（供校准卡片 & 自动化使用） ──────────────────────────
+  room_x:
+    name: "房间 X"
+  room_y:
+    name: "房间 Y"
+  height_floor:
+    name: "离地高度"
+
+  in_boundary:
+    name: "在有效区域内"
+
+  # ── 呼吸 ────────────────────────────────────────────────────────────────────
+  breath_value:
+    name: "呼吸频率"
+  breath_state:
+    name: "呼吸状态"
+    # normal / high / low / none
+
+  # ── 心率 ────────────────────────────────────────────────────────────────────
+  heart_rate:
+    name: "心率"
+
+  # ── 睡眠 ────────────────────────────────────────────────────────────────────
+  in_bed:
+    name: "在床状态"
+  sleep_state:
+    name: "睡眠状态"
+    # deep / light / awake / none
+  awake_duration:
+    name: "清醒时长"
+  light_sleep_duration:
+    name: "浅睡时长"
+  deep_sleep_duration:
+    name: "深睡时长"
+  sleep_score:
+    name: "睡眠评分"
+  sleep_quality:
+    name: "睡眠质量"
+    # good / fair / poor / none
+
+# ── 可选：通过 number 实体在 HA 中实时更新校准参数 ──────────────────────────
+# 校准卡片保存后会调用这些服务
+number:
+  - platform: template
+    name: "偏航角"
+    min_value: -180
+    max_value:  180
+    step: 0.1
+    set_action:
+      lambda: "id(radar).set_yaw(x);"
+
+  - platform: template
+    name: "俯仰角"
+    min_value: -90
+    max_value:  90
+    step: 0.5
+    set_action:
+      lambda: "id(radar).set_pitch(x);"
+
+  - platform: template
+    name: "横滚角"
+    min_value: -90
+    max_value:  90
+    step: 0.5
+    set_action:
+      lambda: "id(radar).set_roll(x);"
+
+  - platform: template
+    name: "雷达 X 位置"
+    min_value: -2000
+    max_value:  2000
+    step: 1
+    set_action:
+      lambda: "id(radar).set_radar_x(x);"
+
+  - platform: template
+    name: "雷达 Y 位置"
+    min_value: -2000
+    max_value:  2000
+    step: 1
+    set_action:
+      lambda: "id(radar).set_radar_y(x);"
+
+# ── 可选：WiFi 信号强度 ───────────────────────────────────────────────────────
+sensor:
+  - platform: wifi_signal
+    name: "WiFi 信号"
+    update_interval: 60s

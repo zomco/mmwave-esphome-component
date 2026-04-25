@@ -1,48 +1,268 @@
+"""R60ABD1 60GHz 呼吸睡眠雷达 ESPHome 组件"""
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.components import uart
-from esphome.const import CONF_ID
+from esphome.components import uart, sensor, binary_sensor, text_sensor
+from esphome.const import (
+    CONF_ID,
+    DEVICE_CLASS_PRESENCE,
+    DEVICE_CLASS_DISTANCE,
+    STATE_CLASS_MEASUREMENT,
+    UNIT_CENTIMETER,
+    UNIT_BEATS_PER_MINUTE,
+    UNIT_PERCENT,
+    UNIT_EMPTY,
+    ICON_EMPTY,
+)
 
-# Declare the namespace for our C++ code
-CODEOWNERS = ["@zomco"]  # Optional: Add your GitHub username
-DEPENDENCIES = ["uart"]  # This component requires UART
-MULTI_CONF = True  # Allow multiple instances of this component
+CODEOWNERS = ["@your-github-handle"]
+DEPENDENCIES = ["uart"]
+AUTO_LOAD = ["sensor", "binary_sensor", "text_sensor"]
 
-# Namespace in C++
+# ── 命名空间 ──────────────────────────────────────────────────────────────────
+
 r60abd1_ns = cg.esphome_ns.namespace("r60abd1")
-# Get the C++ class defined in the .h file
-R60ABD1Component = r60abd1_ns.class_("R60ABD1Component", cg.Component, uart.UARTDevice)
+R60ABD1Component = r60abd1_ns.class_(
+    "R60ABD1Component", cg.Component, uart.UARTDevice
+)
 
-CONF_R60ABD1_ID = "r60abd1_id"
+# ── 配置键常量 ────────────────────────────────────────────────────────────────
 
-# Define the basic configuration schema for the component hub
-CONFIG_SCHEMA = cv.Schema(
-    {
-        cv.GenerateID(): cv.declare_id(R60ABD1Component),
-        # Add component-level configuration options here if needed later
-        # For example:
-        # cv.Optional("enable_ota"): cv.boolean,
-    }
-).extend(
-    uart.UART_DEVICE_SCHEMA
-)  # Inherit UART settings (tx_pin, rx_pin, baud_rate etc)
+CONF_RADAR_X        = "radar_x"
+CONF_RADAR_Y        = "radar_y"
+CONF_RADAR_HEIGHT   = "radar_height"
+CONF_YAW            = "yaw"
+CONF_PITCH          = "pitch"
+CONF_ROLL           = "roll"
+CONF_POLYGON        = "polygon"
 
+CONF_PRESENCE       = "presence"
+CONF_MOTION_STATE   = "motion_state"
+CONF_BODY_MOVEMENT  = "body_movement"
+CONF_BODY_DISTANCE  = "body_distance"
+CONF_RAW_X          = "raw_x"
+CONF_RAW_Y          = "raw_y"
+CONF_RAW_Z          = "raw_z"
+CONF_ROOM_X         = "room_x"
+CONF_ROOM_Y         = "room_y"
+CONF_HEIGHT_FLOOR   = "height_floor"
+CONF_IN_BOUNDARY    = "in_boundary"
+CONF_BREATH_VALUE   = "breath_value"
+CONF_BREATH_STATE   = "breath_state"
+CONF_HEART_RATE     = "heart_rate"
+CONF_IN_BED         = "in_bed"
+CONF_SLEEP_STATE    = "sleep_state"
+CONF_AWAKE_DURATION = "awake_duration"
+CONF_LIGHT_SLEEP_DURATION = "light_sleep_duration"
+CONF_DEEP_SLEEP_DURATION  = "deep_sleep_duration"
+CONF_SLEEP_SCORE    = "sleep_score"
+CONF_SLEEP_QUALITY  = "sleep_quality"
 
-# The function that translates YAML config to C++ code
+# ── 多边形顶点 Schema ─────────────────────────────────────────────────────────
+
+POLYGON_POINT_SCHEMA = cv.Schema({
+    cv.Required("x"): cv.float_,
+    cv.Required("y"): cv.float_,
+})
+
+# ── 组件 Schema ───────────────────────────────────────────────────────────────
+
+CONFIG_SCHEMA = (
+    cv.Schema(
+        {
+            cv.GenerateID(): cv.declare_id(R60ABD1Component),
+
+            # ── 校准参数 ──────────────────────────────────────────────────
+            cv.Optional(CONF_RADAR_X,      default=0.0): cv.float_,
+            cv.Optional(CONF_RADAR_Y,      default=0.0): cv.float_,
+            cv.Optional(CONF_RADAR_HEIGHT, default=220.0): cv.positive_float,
+            cv.Optional(CONF_YAW,          default=0.0): cv.float_range(-180, 180),
+            cv.Optional(CONF_PITCH,        default=0.0): cv.float_range(-90, 90),
+            cv.Optional(CONF_ROLL,         default=0.0): cv.float_range(-90, 90),
+            cv.Optional(CONF_POLYGON,      default=[]): cv.ensure_list(POLYGON_POINT_SCHEMA),
+
+            # ── 存在与运动 ────────────────────────────────────────────────
+            cv.Optional(CONF_PRESENCE): binary_sensor.binary_sensor_schema(
+                device_class=DEVICE_CLASS_PRESENCE,
+            ),
+            cv.Optional(CONF_MOTION_STATE): sensor.sensor_schema(
+                icon="mdi:motion-sensor",
+                accuracy_decimals=0,
+                state_class=STATE_CLASS_MEASUREMENT,
+            ),
+            cv.Optional(CONF_BODY_MOVEMENT): sensor.sensor_schema(
+                icon="mdi:run-fast",
+                accuracy_decimals=0,
+                state_class=STATE_CLASS_MEASUREMENT,
+            ),
+            cv.Optional(CONF_BODY_DISTANCE): sensor.sensor_schema(
+                unit_of_measurement=UNIT_CENTIMETER,
+                icon="mdi:ruler",
+                accuracy_decimals=0,
+                device_class=DEVICE_CLASS_DISTANCE,
+                state_class=STATE_CLASS_MEASUREMENT,
+            ),
+
+            # ── 原始坐标 ──────────────────────────────────────────────────
+            cv.Optional(CONF_RAW_X): sensor.sensor_schema(
+                unit_of_measurement=UNIT_CENTIMETER,
+                icon="mdi:axis-x-arrow",
+                accuracy_decimals=0,
+                state_class=STATE_CLASS_MEASUREMENT,
+            ),
+            cv.Optional(CONF_RAW_Y): sensor.sensor_schema(
+                unit_of_measurement=UNIT_CENTIMETER,
+                icon="mdi:axis-y-arrow",
+                accuracy_decimals=0,
+                state_class=STATE_CLASS_MEASUREMENT,
+            ),
+            cv.Optional(CONF_RAW_Z): sensor.sensor_schema(
+                unit_of_measurement=UNIT_CENTIMETER,
+                icon="mdi:axis-z-arrow",
+                accuracy_decimals=0,
+                state_class=STATE_CLASS_MEASUREMENT,
+            ),
+
+            # ── 变换后坐标 ────────────────────────────────────────────────
+            cv.Optional(CONF_ROOM_X): sensor.sensor_schema(
+                unit_of_measurement=UNIT_CENTIMETER,
+                icon="mdi:map-marker-radius",
+                accuracy_decimals=1,
+                state_class=STATE_CLASS_MEASUREMENT,
+            ),
+            cv.Optional(CONF_ROOM_Y): sensor.sensor_schema(
+                unit_of_measurement=UNIT_CENTIMETER,
+                icon="mdi:map-marker-radius",
+                accuracy_decimals=1,
+                state_class=STATE_CLASS_MEASUREMENT,
+            ),
+            cv.Optional(CONF_HEIGHT_FLOOR): sensor.sensor_schema(
+                unit_of_measurement=UNIT_CENTIMETER,
+                icon="mdi:human-male-height",
+                accuracy_decimals=1,
+                state_class=STATE_CLASS_MEASUREMENT,
+            ),
+            cv.Optional(CONF_IN_BOUNDARY): binary_sensor.binary_sensor_schema(
+                icon="mdi:vector-polygon",
+            ),
+
+            # ── 呼吸 ──────────────────────────────────────────────────────
+            cv.Optional(CONF_BREATH_VALUE): sensor.sensor_schema(
+                unit_of_measurement="次/min",
+                icon="mdi:lungs",
+                accuracy_decimals=0,
+                state_class=STATE_CLASS_MEASUREMENT,
+            ),
+            cv.Optional(CONF_BREATH_STATE): text_sensor.text_sensor_schema(
+                icon="mdi:lungs",
+            ),
+
+            # ── 心率 ──────────────────────────────────────────────────────
+            cv.Optional(CONF_HEART_RATE): sensor.sensor_schema(
+                unit_of_measurement=UNIT_BEATS_PER_MINUTE,
+                icon="mdi:heart-pulse",
+                accuracy_decimals=0,
+                state_class=STATE_CLASS_MEASUREMENT,
+            ),
+
+            # ── 睡眠 ──────────────────────────────────────────────────────
+            cv.Optional(CONF_IN_BED): binary_sensor.binary_sensor_schema(
+                icon="mdi:bed",
+            ),
+            cv.Optional(CONF_SLEEP_STATE): text_sensor.text_sensor_schema(
+                icon="mdi:sleep",
+            ),
+            cv.Optional(CONF_AWAKE_DURATION): sensor.sensor_schema(
+                unit_of_measurement="min",
+                icon="mdi:timer-outline",
+                accuracy_decimals=0,
+                state_class=STATE_CLASS_MEASUREMENT,
+            ),
+            cv.Optional(CONF_LIGHT_SLEEP_DURATION): sensor.sensor_schema(
+                unit_of_measurement="min",
+                icon="mdi:sleep",
+                accuracy_decimals=0,
+                state_class=STATE_CLASS_MEASUREMENT,
+            ),
+            cv.Optional(CONF_DEEP_SLEEP_DURATION): sensor.sensor_schema(
+                unit_of_measurement="min",
+                icon="mdi:sleep",
+                accuracy_decimals=0,
+                state_class=STATE_CLASS_MEASUREMENT,
+            ),
+            cv.Optional(CONF_SLEEP_SCORE): sensor.sensor_schema(
+                icon="mdi:star-circle",
+                accuracy_decimals=0,
+                state_class=STATE_CLASS_MEASUREMENT,
+            ),
+            cv.Optional(CONF_SLEEP_QUALITY): text_sensor.text_sensor_schema(
+                icon="mdi:star-circle-outline",
+            ),
+        }
+    )
+    .extend(uart.UART_DEVICE_SCHEMA)
+    .extend(cv.COMPONENT_SCHEMA)
+)
+
+# ── 代码生成 ──────────────────────────────────────────────────────────────────
+
 async def to_code(config):
-    # Get the UART parent object
-    uart_component = await cg.get_variable(config[uart.CONF_UART_ID])
-    # Create an instance of our C++ class
     var = cg.new_Pvariable(config[CONF_ID])
-
-    # Register the component with ESPHome core
     await cg.register_component(var, config)
-    # Register the component as a UART device
     await uart.register_uart_device(var, config)
 
-    # Example: Pass component-level config to C++
-    # if "enable_ota" in config:
-    #    cg.add(var.set_ota_enabled(config["enable_ota"]))
+    # 校准参数
+    cg.add(var.set_radar_x(config[CONF_RADAR_X]))
+    cg.add(var.set_radar_y(config[CONF_RADAR_Y]))
+    cg.add(var.set_radar_height(config[CONF_RADAR_HEIGHT]))
+    cg.add(var.set_yaw(config[CONF_YAW]))
+    cg.add(var.set_pitch(config[CONF_PITCH]))
+    cg.add(var.set_roll(config[CONF_ROLL]))
 
-    # Set the UART parent for the C++ object
-    cg.add(var.set_uart_parent(uart_component))  # This line is important!
+    # 多边形顶点
+    if config[CONF_POLYGON]:
+        pts = config[CONF_POLYGON]
+        # 生成 std::vector<r60abd1::Vec2>
+        vec2_type = cg.global_ns.namespace("r60abd1").class_("Vec2")
+        poly_init = [cg.StructInitializer(vec2_type, ("x", p["x"]), ("y", p["y"]))
+                     for p in pts]
+        cg.add(var.set_polygon(poly_init))
+
+    # 存在与运动
+    for conf_key, setter in [
+        (CONF_MOTION_STATE,  "set_motion_sensor"),
+        (CONF_BODY_MOVEMENT, "set_body_movement_sensor"),
+        (CONF_BODY_DISTANCE, "set_body_distance_sensor"),
+        (CONF_RAW_X,         "set_raw_x_sensor"),
+        (CONF_RAW_Y,         "set_raw_y_sensor"),
+        (CONF_RAW_Z,         "set_raw_z_sensor"),
+        (CONF_ROOM_X,        "set_room_x_sensor"),
+        (CONF_ROOM_Y,        "set_room_y_sensor"),
+        (CONF_HEIGHT_FLOOR,  "set_height_floor_sensor"),
+        (CONF_BREATH_VALUE,  "set_breath_value_sensor"),
+        (CONF_HEART_RATE,    "set_heart_rate_sensor"),
+        (CONF_AWAKE_DURATION,      "set_awake_duration_sensor"),
+        (CONF_LIGHT_SLEEP_DURATION,"set_light_sleep_duration_sensor"),
+        (CONF_DEEP_SLEEP_DURATION, "set_deep_sleep_duration_sensor"),
+        (CONF_SLEEP_SCORE,         "set_sleep_score_sensor"),
+    ]:
+        if conf_key in config:
+            sens = await sensor.new_sensor(config[conf_key])
+            cg.add(getattr(var, setter)(sens))
+
+    for conf_key, setter in [
+        (CONF_PRESENCE,    "set_presence_sensor"),
+        (CONF_IN_BOUNDARY, "set_in_boundary_sensor"),
+        (CONF_IN_BED,      "set_in_bed_sensor"),
+    ]:
+        if conf_key in config:
+            sens = await binary_sensor.new_binary_sensor(config[conf_key])
+            cg.add(getattr(var, setter)(sens))
+
+    for conf_key, setter in [
+        (CONF_BREATH_STATE,  "set_breath_state_sensor"),
+        (CONF_SLEEP_STATE,   "set_sleep_state_sensor"),
+        (CONF_SLEEP_QUALITY, "set_sleep_quality_sensor"),
+    ]:
+        if conf_key in config:
+            sens = await text_sensor.new_text_sensor(config[conf_key])
+            cg.add(getattr(var, setter)(sens))
