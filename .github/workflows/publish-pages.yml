@@ -1,73 +1,187 @@
-name: Publish Pages
+name: Publish GitHub Pages
 
+# Deploys the GitHub Pages install site.
+# Triggered automatically when publish.yml completes, or manually.
+# Publishing firmware and deploying Pages are intentionally separate:
+#   - static site content can be updated without rebuilding firmware
+#   - firmware build failures do not break the live Pages site
 on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - 'static/**'
-      - '.github/workflows/publish-pages.yml'
   workflow_run:
-    workflows:
-      - Publish Firmware
-    types:
-      - completed
-  pull_request:
+    workflows: ["Publish"]
+    types: [completed]
+    branches: [main]
+  push:
+    branches: [main]
     paths:
-      - 'static/**'
-      - '.github/workflows/publish-pages.yml'
-
+      - "static/**"
+      - "docs/**"
+  workflow_dispatch:
+    inputs:
+      publish_run_id:
+        description: >
+          Run ID of a successful publish.yml run to pull firmware from.
+          Leave empty to use the most recent successful run.
+        required: false
+        type: string
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: github-pages
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build
+  deploy:
+    name: Build and deploy GitHub Pages
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v6.0.2
 
-      - run: mkdir -p output/firmware
+    # When triggered via workflow_run, only proceed if the upstream job succeeded.
+    # For push/workflow_dispatch triggers there is no upstream conclusion to check.
+    if: >
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
 
-      - name: Build
-        uses: actions/jekyll-build-pages@v1.0.13
-        with:
-          source: ./static
-          destination: ./output
-
-      - name: Fetch firmware files
-        uses: robinraju/release-downloader@v1.12
-        with:
-          latest: true
-          fileName: '*'
-          out-file-path: output/firmware
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v5.0.0
-        with:
-          path: output
-          retention-days: 1
-
-  publish:
-    if: github.event_name != 'pull_request'
-    name: Publish
-    runs-on: ubuntu-latest
-    needs:
-      - build
     permissions:
       pages: write
       id-token: write
+      actions: read      # required to download artifacts from other workflow runs
+
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deploy.outputs.page_url }}
+
     steps:
-      - name: Setup Pages
-        uses: actions/configure-pages@v6.0.0
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # ── Resolve which publish.yml run to pull firmware from ───────────────
+      - name: Resolve firmware run ID
+        id: resolve-run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "${{ inputs.publish_run_id }}" ]; then
+            # Explicit run ID supplied via workflow_dispatch input
+            echo "run_id=${{ inputs.publish_run_id }}" >> "$GITHUB_OUTPUT"
+            echo "Source: explicit input run ${{ inputs.publish_run_id }}"
+
+          elif [ "${{ github.event_name }}" = "workflow_run" ]; then
+            # Triggered by publish.yml completion
+            echo "run_id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
+            echo "Source: upstream workflow_run ${{ github.event.workflow_run.id }}"
+
+          else
+            # push to static/** or docs/**, or workflow_dispatch without run_id:
+            # find the most recent successful publish.yml run on main
+            run_id=$(gh api \
+              "repos/${{ github.repository }}/actions/workflows/publish.yml/runs?branch=main&status=success&per_page=1" \
+              --jq '.workflow_runs[0].id')
+            if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
+              echo "::error::No successful publish.yml run found. Run publish.yml first."
+              exit 1
+            fi
+            echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+            echo "Source: latest successful publish.yml run $run_id"
+          fi
+
+      # ── Download all firmware artifacts from the resolved run ─────────────
+      - name: Download firmware artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: firmware-*
+          path: firmware/
+          merge-multiple: false
+          run-id: ${{ steps.resolve-run.outputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Build Jekyll site from static/ ────────────────────────────────────
+      # Jekyll processes static/ → _site/. The index.html has no front matter,
+      # so Jekyll copies it through unchanged. The _config.yml sets site metadata
+      # and allows future .md pages to be added.
+      - name: Build Jekyll site
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./static
+          destination: ./_site
+
+      # ── Assemble firmware, wiring images, and models.json ─────────────────
+      - name: Assemble firmware and wiring assets
+        run: |
+          python3 << 'PYEOF'
+          import os, json, shutil, glob, re
+
+          os.makedirs('_site/images', exist_ok=True)
+          models = []
+
+          for artifact_dir in sorted(glob.glob('firmware/firmware-*/')):
+              artifact_name = os.path.basename(artifact_dir.rstrip('/'))
+              model_id = artifact_name[len('firmware-'):]          # r60abd1-ESP32-C3
+              manifest_path = os.path.join(artifact_dir, 'manifest.json')
+
+              if not os.path.exists(manifest_path):
+                  print(f"[skip] no manifest.json in {artifact_dir}")
+                  continue
+
+              with open(manifest_path) as f:
+                  manifest = json.load(f)
+
+              # Derive radar_model name by stripping the chip-family suffix.
+              # build-action names the output "{esphome.name}-{chipFamily}",
+              # e.g. "r60abd1-ESP32-C3". chipFamily comes from manifest.json.
+              chip_family = (manifest.get('builds') or [{}])[0].get('chipFamily', '')
+              chip_suffix = '-' + chip_family.replace(' ', '-')    # "ESP32-C3" → "-ESP32-C3"
+              radar_model = (model_id[:-len(chip_suffix)]
+                             if chip_suffix != '-' and model_id.endswith(chip_suffix)
+                             else model_id)
+
+              # Copy firmware files into site
+              dest_dir = os.path.join('_site', model_id)
+              os.makedirs(dest_dir, exist_ok=True)
+              for fname in os.listdir(artifact_dir):
+                  shutil.copy2(os.path.join(artifact_dir, fname),
+                               os.path.join(dest_dir, fname))
+              print(f"[firmware] {model_id} → _site/{model_id}/")
+
+              # Copy wiring images: docs/{radar_model}/{radar_model}-*.{png,jpg,jpeg}
+              wiring_images = []
+              docs_dir = os.path.join('docs', radar_model)
+              img_dest = os.path.join('_site', 'images', radar_model)
+              if os.path.isdir(docs_dir):
+                  pattern = re.compile(
+                      rf'^{re.escape(radar_model)}-.+\.(png|jpg|jpeg)$',
+                      re.IGNORECASE)
+                  for fname in sorted(os.listdir(docs_dir)):
+                      if pattern.match(fname):
+                          os.makedirs(img_dest, exist_ok=True)
+                          shutil.copy2(os.path.join(docs_dir, fname),
+                                       os.path.join(img_dest, fname))
+                          rel = f'images/{radar_model}/{fname}'
+                          wiring_images.append(rel)
+                          print(f"[image]   {fname} → _site/{rel}")
+
+              models.append({
+                  'id':            model_id,
+                  'radar_model':   radar_model,
+                  'name':          manifest.get('name', radar_model),
+                  'version':       manifest.get('version', 'unknown'),
+                  'chip_family':   chip_family,
+                  'manifest':      f'{model_id}/manifest.json',
+                  'wiring_images': wiring_images,
+              })
+
+          models.sort(key=lambda m: (m['radar_model'], m['chip_family']))
+
+          with open('_site/models.json', 'w') as f:
+              json.dump(models, f, indent=2)
+
+          print(f"\nmodels.json ({len(models)} model(s)):")
+          print(json.dumps(models, indent=2))
+          PYEOF
+
+      # ── Upload Pages artifact and deploy ──────────────────────────────────
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site/
 
       - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5.0.0
+        id: deploy
+        uses: actions/deploy-pages@v4

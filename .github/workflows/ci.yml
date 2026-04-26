@@ -1,7 +1,6 @@
 name: CI
 
-# Runs on every push to non-main branches and on pull requests.
-# Validates that every firmware configuration in tests/ compiles successfully.
+# Validates that every firmware configuration in tests/ compiles on every PR.
 on:
   push:
     branches-ignore:
@@ -13,37 +12,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ── Step 1: enumerate all radar model YAML configs ────────────────────────
   discover:
     name: Discover test configurations
     runs-on: ubuntu-latest
     outputs:
       configs: ${{ steps.list.outputs.configs }}
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: List test YAML files
         id: list
         run: |
           configs=$(find tests -name "*.yaml" | sort \
             | jq -R -s -c 'split("\n") | map(select(length > 0))')
           echo "configs=$configs" >> "$GITHUB_OUTPUT"
-          echo "Found configurations: $configs"
+          echo "Found: $configs"
 
-  # ── Step 2: build each radar model in parallel ────────────────────────────
   build:
     name: Build ${{ matrix.config }}
     needs: discover
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false          # keep building remaining models on failure
+      fail-fast: false
       matrix:
         config: ${{ fromJson(needs.discover.outputs.configs) }}
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Build ESPHome firmware
         uses: esphome/build-action@v6
         with:

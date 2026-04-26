@@ -1,4 +1,17 @@
-# CHANGEME: Set these variable to your liking
-title: MMWave Firmware Flasher
-description: Powered by ESPHome and ESP Web Tools
-theme: jekyll-theme-slate
+title: "Millimeter-Wave Radar Firmware"
+description: >
+  ESPHome firmware for millimeter-wave radar sensors with coordinate
+  transformation and boundary filtering. Flash directly in your browser
+  using ESP Web Tools.
+
+# The install page (index.html) is plain HTML with no front matter —
+# Jekyll passes it through unchanged. This config is here for site metadata
+# and to support future Markdown documentation pages.
+
+# Exclude files that are not part of the published site
+exclude:
+  - Gemfile
+  - Gemfile.lock
+
+# Disable auto-generated feed/sitemap to keep the site minimal
+plugins: []
